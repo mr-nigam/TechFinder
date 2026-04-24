@@ -1,0 +1,1 @@
+TechFinder is a full-stack web application designed to connect users with nearby technicians for services such as electrical work, plumbing, and appliance repair. The platform supports both scheduled bookings and real-time emergency services.
