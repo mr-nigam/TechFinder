@@ -19,6 +19,7 @@ const startServer = async () => {
         });
 
     } catch(error){
+        
         console.log("POSTGRE db connection failed !!!", error);
     }
 };
