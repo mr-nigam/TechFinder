@@ -1,4 +1,6 @@
-import pool from "../db/db.js";
+import pool from '../db/db.js';
+import jsw from 'jsonwebtoken'
+import bcrypt from 'bcrypt';
 
 
 const createUsersTable = async()=>{
@@ -49,6 +51,7 @@ const createUsersTable = async()=>{
         console.log("Table creation failed", err);
     }
 };
+
 
 
 export default createUsersTable;
