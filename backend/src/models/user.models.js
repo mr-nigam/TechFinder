@@ -1,6 +1,4 @@
 import pool from '../db/db.js';
-import jsw from 'jsonwebtoken'
-import bcrypt from 'bcrypt';
 
 
 const createUsersTable = async()=>{
