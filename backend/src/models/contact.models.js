@@ -1,0 +1,52 @@
+import pool from '../db/db.js';
+
+
+const createContactsTable = async()=>{
+    try{
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS contacts(
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+                contact_number TEXT NOT NULL UNIQUE,
+                country_code VARCHAR(5) NOT NULL,
+
+                is_verified BOOLEAN DEFAULT FALSE,
+                is_default BOOLEAN DEFAULT FALSE,
+
+                contact_type text NOT NULL DEFAULT 'alternate'
+                CHECK (contact_type IN (
+                    'default',
+                    'family',
+                    'whatsapp',
+                    'emergency',
+                    'alternate'
+                )),
+
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            );    
+        `)
+
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_contacts_user_id
+            ON contacts(user_id);
+        `);
+        
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_one_default_contact_number
+            ON contacts(user_id)
+            WHERE is_default = TRUE;
+        `);
+
+        console.log("Table + indexes created successfully");
+
+    }catch(err){
+
+        console.log("Table creation failed", err);
+    }
+};
+
+
+export default createContactsTable;
