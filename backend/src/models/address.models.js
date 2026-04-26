@@ -1,34 +1,41 @@
 import pool from '../db/db.js';
 
 
-const createAddressesTable = async ()=>{
-    try{
+const createAddressesTable = async () => {
+    try {
         await pool.query(`
-            CREATE TABLE IF NOT EXISTS addresses(
+            CREATE TABLE IF NOT EXISTS addresses (
+                -- Keys
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                
+                user_id UUID NOT NULL 
+                    REFERENCES users(id) ON DELETE CASCADE,
 
-                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-
+                -- Address 
                 address_line_1 TEXT NOT NULL,
                 address_line_2 TEXT,
                 landmark TEXT,
 
+                -- Region
                 city TEXT NOT NULL,
                 state TEXT NOT NULL,
                 country TEXT NOT NULL,
-                
                 pincode VARCHAR(20) NOT NULL,
 
+                -- Geo
                 location GEOGRAPHY(POINT, 4326),
                 
+                -- Flags
                 is_default BOOLEAN DEFAULT FALSE,
                 
+                -- Audit
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 
             );
         `);
-        
+
+        // Indexing
         await pool.query(`
             CREATE INDEX IF NOT EXISTS idx_addresses_user_id 
             ON addresses(user_id);
@@ -45,11 +52,10 @@ const createAddressesTable = async ()=>{
             WHERE is_default = TRUE;
         `);
 
-        console.log("Table + indexes created successfully");
+        console.log("Addresses table and indexes created successfully");
 
     }catch(err){
-
-        console.log("Table creation failed", err);
+        console.error("Addresses Table creation failed", err);
     }
 };
 

@@ -1,34 +1,41 @@
 import pool from '../db/db.js';
 
 
-const createContactsTable = async()=>{
+const createContactsTable = async() => {
     try{
         await pool.query(`
             CREATE TABLE IF NOT EXISTS contacts(
+                -- Keys
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                user_id UUID NOT NULL 
+                    REFERENCES users(id) ON DELETE CASCADE,
 
+                -- Contanct Details 
                 contact_number TEXT NOT NULL UNIQUE,
                 country_code VARCHAR(5) NOT NULL,
 
-                is_verified BOOLEAN DEFAULT FALSE,
+                contact_type text NOT NULL DEFAULT 'alternate'
+                    CHECK (contact_type IN (
+                        'default',
+                        'family',
+                        'whatsapp',
+                        'emergency',
+                        'alternate'
+                    )),
+
                 is_default BOOLEAN DEFAULT FALSE,
 
-                contact_type text NOT NULL DEFAULT 'alternate'
-                CHECK (contact_type IN (
-                    'default',
-                    'family',
-                    'whatsapp',
-                    'emergency',
-                    'alternate'
-                )),
+                -- Verification
+                is_verified BOOLEAN DEFAULT FALSE,
 
+                -- Audit
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             );    
-        `)
-
+        `);
+        
+        // Indexing
         await pool.query(`
             CREATE INDEX IF NOT EXISTS idx_contacts_user_id
             ON contacts(user_id);
@@ -40,11 +47,11 @@ const createContactsTable = async()=>{
             WHERE is_default = TRUE;
         `);
 
-        console.log("Table + indexes created successfully");
+        console.log("Contact table and indexes created successfully");
 
     }catch(err){
 
-        console.log("Table creation failed", err);
+        console.error("Contact Table creation failed", err);
     }
 };
 

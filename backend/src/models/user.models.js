@@ -1,52 +1,64 @@
 import pool from '../db/db.js';
 
 
-const createUsersTable = async()=>{
+const createUsersTable = async() => {
     try{
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users(
+                -- Keys
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+                -- Identity
+                username VARCHAR(25) UNIQUE NOT NULL 
+                    CHECK (
+                        char_length(username) BETWEEN 3 AND 25 
+                        AND username !~ '\s'
+                    ),
 
                 first_name VARCHAR(25) NOT NULL,
                 last_name VARCHAR(25) NOT NULL,
                 
                 email VARCHAR(100) UNIQUE NOT NULL,
                 
+                -- Profile
                 gender VARCHAR(20) DEFAULT 'Not Shared'
-                CHECK (gender IN (
-                    'male',
-                    'female',
-                    'other',
-                    'not_shared'
-                )),
-                
-                username VARCHAR(25) UNIQUE NOT NULL 
-                CHECK (
-                    char_length(username) BETWEEN 3 AND 25 
-                    AND username !~ '\s'
-                ),
+                    CHECK (gender IN (
+                        'male',
+                        'female',
+                        'other',
+                        'not_shared'
+                    )),
 
-                age INT CHECK(age BETWEEN 0 AND 120),
+                date_of_birth DATE CHECK(age BETWEEN 0 AND 120),
 
-                password TEXT NOT NULL,
-                refresh_token TEXT,
-                
                 profile_picture TEXT,
                 bio TEXT,
+
+                -- Auth
+                password TEXT NOT NULL,
+                refresh_token TEXT,
+                password_changed_at TIMESTAMPTZ,
                 
+                -- Geo
                 current_location GEOGRAPHY(POINT, 4326),
 
+                -- Account Status
                 is_email_verified BOOLEAN DEFAULT FALSE,
+                email_verified_at TIMESTAMPTZ,
                 last_seen TIMESTAMPTZ,
 
                 role VARCHAR(15) NOT NULL 
-                CHECK(role IN('user','technician','admin')) 
-                DEFAULT 'user',
+                    CHECK(role IN('user','technician','admin')) 
+                    DEFAULT 'user',
 
                 status VARCHAR(15) NOT NULL 
-                CHECK(status IN ('active','blocked','suspended')) 
-                DEFAULT 'active',
+                    CHECK(status IN ('active','blocked','suspended')) 
+                    DEFAULT 'active',
                 
+                -- Soft Delete
+                deleted_at TIMESTAMPTZ
+
+                -- Audit
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             );    
@@ -57,14 +69,12 @@ const createUsersTable = async()=>{
             ON users USING GIST(current_location);
         `);
 
-        console.log("Table + indexes created successfully");
-
+        console.log("User table and indexes created successfully");
     }catch(err){
-        
-        console.log("Table creation failed", err);
+
+        console.error(" Used Table creation failed", err);
     }
 };
-
 
 
 export default createUsersTable;
