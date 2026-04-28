@@ -19,28 +19,42 @@ const createUsersTable = async() => {
                 last_name VARCHAR(25) NOT NULL,
                 
                 email VARCHAR(100) UNIQUE NOT NULL,
-                
+
+                -- Contact Details
+                primary_contact_number TEXT UNIQUE NOT NULL
+                    CHECK (
+                        contact_number ~ '^[0-9]+$'
+                        AND length(primary_contact_number) BETWEEN 6 AND 15    
+                    ),
+
+                country_code VARCHAR(5) NOT NULL,
+
+                is_primary_contact_number_verified BOOLEAN DEFAULT FALSE,
+
                 -- Profile
-                gender VARCHAR(20) DEFAULT 'Not Shared'
+                gender VARCHAR(20) DEFAULT 'not shared'
                     CHECK (gender IN (
                         'male',
                         'female',
                         'other',
-                        'not_shared'
+                        'not shared'
                     )),
 
                 date_of_birth DATE CHECK(age BETWEEN 0 AND 120),
 
-                profile_picture TEXT,
+                profile_picture_publicid TEXT,
+                profile_picture_url TEXT,
                 bio TEXT,
 
                 -- Auth
                 password TEXT NOT NULL,
-                refresh_token TEXT,
                 password_changed_at TIMESTAMPTZ,
+                refresh_token TEXT,
                 
                 -- Geo
                 current_location GEOGRAPHY(POINT, 4326),
+                current_location_captured_at TIMESTAMPTZ,
+                current_location_accuracy_meters NUMERIC(8,2),
 
                 -- Account Status
                 is_email_verified BOOLEAN DEFAULT FALSE,
