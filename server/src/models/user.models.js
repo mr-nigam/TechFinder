@@ -55,6 +55,14 @@ const createUsersTable = async() => {
                 current_location GEOGRAPHY(POINT, 4326),
                 current_location_captured_at TIMESTAMPTZ,
                 current_location_accuracy_meters NUMERIC(8,2),
+                location_source VARCHAR(20) DEFAULT 'gps'
+                    CHECK (
+                    location_source IN (
+                        'gps',
+                        'manual_pin',
+                        'geocoded',
+                        'admin'
+                    )),
 
                 -- Account Status
                 is_email_verified BOOLEAN DEFAULT FALSE,
