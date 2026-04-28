@@ -40,6 +40,9 @@ const createTechniciansTable = async() => {
                 total_jobs_completed INT DEFAULT 0 
                     CHECK (total_jobs_completed >= 0),
 
+                -- Deleteion Status
+                is_deleted BOOLEAN DEFAULT FALSE,
+
                 -- Audit
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP

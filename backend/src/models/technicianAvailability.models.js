@@ -38,6 +38,9 @@ const createTechnicianAvailabilityTable = async () => {
                 -- Settings
                 is_active BOOLEAN DEFAULT TRUE,
                 
+                -- Deleteion Status
+                is_deleted BOOLEAN DEFAULT FALSE,
+                
                 -- Audit
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP

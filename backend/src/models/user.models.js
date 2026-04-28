@@ -54,9 +54,9 @@ const createUsersTable = async() => {
                 status VARCHAR(15) NOT NULL 
                     CHECK(status IN ('active','blocked','suspended')) 
                     DEFAULT 'active',
-                
-                -- Soft Delete
-                deleted_at TIMESTAMPTZ
+
+                -- Deleteion Status
+                is_deleted BOOLEAN DEFAULT FALSE,
 
                 -- Audit
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,

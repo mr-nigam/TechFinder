@@ -39,6 +39,9 @@ const createTechniciansDocumentsTable = async() => {
                 rejection_reason TEXT,
                 expiry_date DATE,
 
+                -- Deleteion Status
+                is_deleted BOOLEAN DEFAULT FALSE,
+                
                 -- Audit
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 verified_at TIMESTAMPTZ,

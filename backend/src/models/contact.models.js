@@ -11,9 +11,14 @@ const createContactsTable = async() => {
                 user_id UUID NOT NULL 
                     REFERENCES users(id) ON DELETE CASCADE,
 
-                -- Contanct Details 
-                contact_number TEXT NOT NULL UNIQUE,
+                -- Contact Details
                 country_code VARCHAR(5) NOT NULL,
+
+                contact_number TEXT NOT NULL
+                    CHECK (
+                        contact_number ~ '^[0-9]+$'
+                        AND length(contact_number) BETWEEN 6 AND 15    
+                    ),
 
                 contact_type text NOT NULL DEFAULT 'alternate'
                     CHECK (contact_type IN (
@@ -28,10 +33,16 @@ const createContactsTable = async() => {
 
                 -- Verification
                 is_verified BOOLEAN DEFAULT FALSE,
-
+                
+                -- Deleteion Status
+                is_deleted BOOLEAN DEFAULT FALSE,
+                
                 -- Audit
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+
+                -- Constraints
+                UNIQUE(user_id, contact_number)
             );    
         `);
         
@@ -42,9 +53,9 @@ const createContactsTable = async() => {
         `);
         
         await pool.query(`
-            CREATE INDEX IF NOT EXISTS idx_one_default_contact_number
+            CREATE INDEX IF NOT EXISTS ux_one_default_contact
             ON contacts(user_id)
-            WHERE is_default = TRUE;
+            WHERE is_default = TRUE AND is_deleted = FALSE;
         `);
 
         console.log("Contact table and indexes created successfully");
