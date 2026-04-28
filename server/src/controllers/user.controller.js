@@ -56,6 +56,42 @@ const HashPassword = async(password) => {
     return await bcrypt.hash(password,10);
 }
 
+const getAccessCookieOptions = () => ({
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 15 * 60 * 1000 // 30 min
+});
+
+const getRefreshCookieOptions = () => ({
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+});
+
+const formatOwnUser = (user) => ({
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    bio: user.bio,
+    profile_picture_url: 
+        user.profile_picture_url,
+    primary_contact_number: 
+        user.primary_contact_number
+});
+
+const formatPublicUser = (user) => ({
+    id: user.id,
+    username: user.username,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    bio: user.bio,
+    profile_picture_url: 
+        user.profile_picture_url
+});
 
 // ACCOUNT
 const registerUser = asyncHandler(async (req, res) => {
@@ -148,6 +184,7 @@ const registerUser = asyncHandler(async (req, res) => {
         ];
 
         const result = await pool.query(query, values);
+
         const user = result.rows[0];
 
         if(!user){
@@ -159,7 +196,7 @@ const registerUser = asyncHandler(async (req, res) => {
         .json(
             new ApiResponse(
                 200,
-                user,
+                {user: formatOwnUser(user)},
                 "User registered successfully"
             )
         );
@@ -192,15 +229,276 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 });
 
-const logInUser = asyncHandler (async (req, res) => {});
-const logOutUser = asyncHandler (async (req, res) => {});
+const logInUser = asyncHandler (async (req, res) => {
+    const email = req.body.email?.trim().replace(/"/g, "") || "";
+    const username = req.body.username?.trim();
+    const primary_contact_number = req.body.primary_contact_number?.trim()|| "";
+    const password = req.body.paswword?.trim() || "";
+
+    if(!email && !username && !primary_contact_number){
+        throw new ApiError(
+            404,
+            "Please provide email, username, contact number"
+        );
+    }
+
+    if(!paswword){
+        throw new ApiError(404,"Please enter password");
+    }
+
+    let filter = "";
+    if(email) filter = email; 
+    if(username) filter = username; 
+    if(primary_contact_number) filter = primary_contact_number; 
+
+    let query = `
+        SELECT id, username, email, password 
+        FROM users
+        WHERE email = $1
+            OR username = $1
+            OR primary_contact_number = $1
+        LIMIT 1; 
+    `;
+    
+    let result = await pool.query(query,[filter]);
+
+    let user = result.rows[0];
+
+    if(!user){
+        throw new ApiError(
+            400,
+            "Invalid credentials"
+        );
+    }
+
+    const isMatch = await bcrypt.compare(password,user.password);
+    if(!isMatch){
+        throw new ApiError(
+            401,
+            "Invalid credentials"
+        );
+    }
+    
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+    
+    const query = `
+        UPDATE users
+        SET refresh_token = $1,
+            updated_at = NOW()
+        WHERE id = $2
+        RETURNING *;
+    `;
+    result = await pool.query(query,[refreshToken,user.id]);
+    
+    user = result.rows[0]
+
+    return res
+    .status(201)
+    .cookie("accessToken",accessToken,getAccessCookieOptions())
+    .cookie("refreshToken",refreshToken,getRefreshCookieOptions())
+    .json(
+        new ApiResponse(
+            201,
+            {user: formatOwnUser(user)},
+            "User logged in successfully"
+        )
+    );
+
+});
+
+const logOutUser = asyncHandler (async (req, res) => {
+    const query = `
+        UPDATE users
+        SET refresh_token = NULL,
+            update_at = NOW()
+        WHERE id = $1;
+    `;
+
+    await pool.query(query,[req.user.id]);
+
+    return res
+        .status(200)
+        .clearCookie("accessToken",getAccessCookieOptions())
+        .clearCookie("refreshToken",getRefreshCookieOptions())
+        .json(
+            new ApiResponse(200,{},"User logged Out")
+        );
+});
 
 
 // SECURITY
-const refreshAccessToken = asyncHandler (async (req, res) => {}); 
+const refreshAccessToken = asyncHandler (async (req, res) => {
+    const incomingRefreshToken = 
+        req?.cookies?.refreshToken || req?.body?.refreshToken;
+
+    if(!incomingRefreshToken){
+        throw new ApiError(
+            401,
+            "Unauthorized request"
+        );
+    }
+
+    try{
+        const decodedToken = jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        );
+        
+        const query = `
+            SELECT *
+            FROM users
+            WHERE id = $1
+                AND refresh_token = $2
+                AND is_deleted = false
+            LIMIT 1;
+        `;
+
+        const values = [
+            decodedToken.id,
+            incomingRefreshToken
+        ];
+
+        const result = await pool.query(query,values);
+
+        const user = result.rows[0];
+
+        if(!user){
+            throw new ApiError(
+                401,
+                "Refresh token is expired or used"
+            );
+        }
+
+        const accessToken = generateAccessToken(user);
+        const refreshToken = generateRefreshToken(user);
+
+        const updateQuery = `
+            UPDATE users
+            SET refresh_token = $1,
+                updated_at = NOW()
+            WHERE id = $2;
+        `;
+
+        await pool.query(updateQuery,[refreshToken, user.id]);
+        
+        return res
+        .status(201)
+        .cookie("accessToken",accessToken,getAccessCookieOptions())
+        .cookie("refreshToken",refreshToken,getRefreshCookieOptions())
+        .json(
+            new ApiResponse(
+                201,
+                {user: formatOwnUser(user)},
+                "Access token refreshed successfully"
+            )
+        );
+
+    }catch(err){
+        throw new ApiError(
+            401,
+            err?.message || "invalid refresh token"
+        );
+    }
+});
+
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+    const{oldPassword, newPassword} = req.body;
+
+    if(!oldPassword || !newPassword){
+        throw new ApiError(
+            400, 
+            "Old and new password are required"
+        );
+    }
+    
+    if(oldPassword === newPassword){
+        throw new ApiError(
+            400,
+            "New password must be different"
+        );
+    }
+
+    let query = `
+        SELECT id, password
+        FROM users
+        WHERE id = $1
+            AND is_deleted = false
+        LIMIT 1;
+    `;
+
+    let result = await pool.query(
+        query,
+        [req.user.id]
+    );
+
+    let user = result.rows[0];
+
+    if(!user){
+        throw new ApiError(
+            404,
+            "invalid credentials"
+        );
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword,user.password);
+    if(!isMatch){
+        throw new ApiError(
+            401,
+            "Invalid credentials"
+        );
+    }
+
+    const newHashPassword = await HashPassword(newPassword);
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    query = `
+        UPDATE users
+        set password = $1,
+            refresh_token = $2,
+            password_changed_at = NOW(),
+            updated_at = NOW()
+        WHERE id = $3
+        RETURNING *;
+    `;
+
+    const values = [
+        newHashPassword,
+        refreshToken,
+        req.user.id,
+    ];
+    
+    result = await pool.query(
+        query,
+        values
+    );
+
+    user = result.rows[0];
+
+    if(!user){
+        throw new ApiError(
+            404,
+            "invalid credentials"
+        );
+    }
+
+    return res
+    .status(200)
+    .cookie("accessToken",accessToken,getAccessCookieOptions())
+    .cookie("refreshToken",refreshToken,getRefreshCookieOptions())
+    .json(
+        new ApiResponse(
+            200,
+            {user: formatOwnUser(user)},
+            "Password changed successfully"
+        )
+    );
+    
+});
+
 const forgotPassword = asyncHandler(async (req, res) => {});
 const resetPassword = asyncHandler(async (req, res) => {});
-const changeCurrentPassword = asyncHandler(async (req, res) => {});
 
 
 // EMAIL VERIFICATION

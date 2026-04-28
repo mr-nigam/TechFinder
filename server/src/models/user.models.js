@@ -82,7 +82,7 @@ const createUsersTable = async() => {
             CREATE INDEX IF NOT EXISTS idx_users_current_location
             ON users USING GIST(current_location);
         `);
-
+        
         console.log("User table and indexes created successfully");
     }catch(err){
 
