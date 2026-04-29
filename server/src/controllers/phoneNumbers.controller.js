@@ -3,15 +3,13 @@ import asyncHandler from '../utils/asyncHandler.js';
 import ApiError from '../utils/apiError.js';
 import ApiResponse from '../utils/apiResponse.js';
 
-import { stat } from 'node:fs';
-
-// Utility Functions
 import {
     hasEmpty,
     isValidUUID
 } from '../utils/validation.utils.js';
 
 import {
+    isValidPhoneNumber,
     formatPhoneNumbers
 } from '../utils/phoneNumbers.utils.js';
 
@@ -47,8 +45,11 @@ const addPhoneNumber = asyncHandler(async (req, res) => {
                 "All required fields are not given"
             );
         }
-        
-        phoneNumbertemp = normalized.phone_number;
+    
+        isValidPhoneNumber({
+            phone_number: normalized.phone_number,
+            country_code: normalized.country_code
+        });
 
         if(is_default){
             const query = `
@@ -92,7 +93,7 @@ const addPhoneNumber = asyncHandler(async (req, res) => {
         );
 
         const phoneNumber = result.rows[0];
-
+        
         if(!phoneNumber){
             throw new ApiError(
                 400,
@@ -177,6 +178,42 @@ const getPhoneNumberById = asyncHandler(async (req, res) => {
             "INvalid phone number id"
         );
     }
+
+    const query = `
+        SELECT
+            country_code,
+            phone_number,
+            phone_number_type,
+        FROM phone_numbers
+        WHERE id = $1
+            AND is_deleted = false
+        LIMIT 1;
+    `;
+
+    const result = await pool.query(
+        query,
+        [req.user.id]
+    );
+
+    const phoneNumber = result.rows[0];
+    
+    if(!phoneNumber){
+        throw new ApiError(
+            400,
+            "Phone number not found"
+        );
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            phoneNumber,
+            "Phone number fetched successfully"
+        )
+    );
+
 });
 
 const deletePhoneNumber = asyncHandler(async (req, res) => {
@@ -225,7 +262,7 @@ const deletePhoneNumber = asyncHandler(async (req, res) => {
 
 });
 
-const changeDefaultPhoneNumber = asyncHandler(async (req, res) => {
+const setDefaultPhoneNumber = asyncHandler(async (req, res) => {
     const phoneNumberId = req.params.phoneNumberId;
     
     if(!isValidUUID(phoneNumberId)){
@@ -313,7 +350,7 @@ const changeDefaultPhoneNumber = asyncHandler(async (req, res) => {
         
         throw new ApiError(
             401,
-            err.message || "Setting default phone number failed"
+            err.message || "Setting default phone number is failed"
         );
 
     }finally{
@@ -321,13 +358,18 @@ const changeDefaultPhoneNumber = asyncHandler(async (req, res) => {
     }
 });
 
+const sendPhoneNumberOtp = asyncHandler(async (req, res) => {});
+const resendPhoneNumberOtp = asyncHandler(async (req, res) => {});
 const verifyPhoneNumber = asyncHandler(async (req, res) => {});
+
 
 export {
     addPhoneNumber,
     getMyPhoneNumbers,
     getPhoneNumberById,
     deletePhoneNumber,
-    changeDefaultPhoneNumber,
+    setDefaultPhoneNumber,
+    sendPhoneNumberOtp,
+    resendPhoneNumberOtp,
     verifyPhoneNumber
 };
