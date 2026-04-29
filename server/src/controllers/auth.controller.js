@@ -19,7 +19,6 @@ import {
     getAccessCookieOptions,
     getRefreshCookieOptions,
     formatOwnUser,
-    formatPublicUser,
     hasEmpty
 } from '../utils/user.utils.js';
 
@@ -72,7 +71,10 @@ const registerUser = asyncHandler(async (req, res) => {
 
         const isValid = /^[0-9]+$/.test(normalized.primary_contact_number);
         if(!isValid){
-            throw new ApiError(400,"Contact number must contain digits only");
+            throw new ApiError(
+                400,
+                "Contact number must contain digits only"
+            );
         }
 
         // check email format
@@ -85,7 +87,9 @@ const registerUser = asyncHandler(async (req, res) => {
         try{
             hashedPassword = await hashPassword(normalized.password,10);   
         }catch(err){
-            throw new ApiError(400, err.message);
+            throw new ApiError(
+                400, err.message
+            );
         }
 
         const query = `
@@ -121,7 +125,10 @@ const registerUser = asyncHandler(async (req, res) => {
         const user = result.rows[0];
 
         if(!user){
-            throw new ApiError(400,"User registration failed");
+            throw new ApiError(
+                400,
+                "User registration failed"
+            );
         }
 
         return res
@@ -141,18 +148,30 @@ const registerUser = asyncHandler(async (req, res) => {
         
         if(err.code === "23505"){
             if (err.constraint?.includes("email")) {
-            throw new ApiError(409, "Email already registered");
+                throw new ApiError(
+                    409,
+                    "Email already registered"
+                );
             }
 
             if (err.constraint?.includes("username")) {
-            throw new ApiError(409, "Username already taken");
+                throw new ApiError(
+                    409,
+                    "Username already taken"
+                );
             }
 
             if (err.constraint?.includes("primary_contact_number")) {
-            throw new ApiError(409, "Contact number already in use");
+                throw new ApiError(
+                    409,
+                    "Contact number already in use"
+                );
             }
 
-            throw new ApiError(409, "Duplicate record exists");
+            throw new ApiError(
+                409,
+                "Duplicate record exists"
+            );
         }
         
         throw new ApiError(
@@ -176,7 +195,9 @@ const logInUser = asyncHandler (async (req, res) => {
     }
 
     if(!paswword){
-        throw new ApiError(404,"Please enter password");
+        throw new ApiError(
+            404,"Please enter password"
+        );
     }
 
     let filter = "";
@@ -255,7 +276,11 @@ const logOutUser = asyncHandler (async (req, res) => {
         .clearCookie("accessToken",getAccessCookieOptions())
         .clearCookie("refreshToken",getRefreshCookieOptions())
         .json(
-            new ApiResponse(200,{},"User logged Out")
+            new ApiResponse(
+                200,
+                {},
+                "User logged Out"
+            )
         );
 });
 

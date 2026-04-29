@@ -79,6 +79,7 @@ const createUsersTable = async() => {
 
                 -- Deleteion Status
                 is_deleted BOOLEAN DEFAULT FALSE,
+                is_deactivated BOOLEAN DEFAULT FALSE,
 
                 -- Audit
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,

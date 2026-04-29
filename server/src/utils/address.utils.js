@@ -20,7 +20,11 @@ const formatBookingAddress = (address) => ({
     location: address.location,
 });
 
+const formatAddressAssets = (address,assets) => ({ });
+const formatMultipleAddress = (address,assets) => ({ });
+
 export {
-    formatAddress,
-    formatMultipleAddress
+    formatOwnAddress,
+    formatBookingAddress,
+    formatAddressAssets
 };

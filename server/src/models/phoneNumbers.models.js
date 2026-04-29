@@ -1,27 +1,27 @@
 import pool from '../db/db.js';
 
 
-const createContactsTable = async() => {
+const createPhoneNumbersTable = async() => {
     try{
         await pool.query(`
-            CREATE TABLE IF NOT EXISTS contacts(
+            CREATE TABLE IF NOT EXISTS phone_numbers(
                 -- Keys
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
                 user_id UUID NOT NULL 
                     REFERENCES users(id) ON DELETE CASCADE,
 
-                -- Contact Details
+                -- Phone Number Details
                 country_code VARCHAR(5) NOT NULL,
 
-                contact_number TEXT NOT NULL
+                phone_number VARCHAR(20) NOT NULL
                     CHECK (
-                        contact_number ~ '^[0-9]+$'
-                        AND length(contact_number) BETWEEN 6 AND 15    
+                        phone_number ~ '^[0-9]+$'
+                        AND length(phone_number) BETWEEN 6 AND 15    
                     ),
 
-                contact_type text NOT NULL DEFAULT 'alternate'
-                    CHECK (contact_type IN (
+                phone_number_type text NOT NULL DEFAULT 'alternate'
+                    CHECK (phone_number_type IN (
                         'default',
                         'family',
                         'whatsapp',
@@ -42,29 +42,24 @@ const createContactsTable = async() => {
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 
                 -- Constraints
-                UNIQUE(user_id, contact_number)
+                UNIQUE(user_id, phone_number)
             );    
         `);
         
         // Indexing
         await pool.query(`
-            CREATE INDEX IF NOT EXISTS idx_contacts_user_id
-            ON contacts(user_id);
-        `);
-        
-        await pool.query(`
-            CREATE INDEX IF NOT EXISTS ux_one_default_contact
-            ON contacts(user_id)
-            WHERE is_default = TRUE AND is_deleted = FALSE;
+            CREATE INDEX IF NOT EXISTS idx_phone_numbers_user_id
+            ON phone_numbers(user_id)
+            WHERE is_deleted = false;
         `);
 
-        console.log("Contact table and indexes created successfully");
+        console.log("Phone Numbers table and indexes created successfully");
 
     }catch(err){
 
-        console.error("Contact Table creation failed", err);
+        console.error("Phone Numbers Table creation failed", err);
     }
 };
 
 
-export default createContactsTable;
+export default createPhoneNumbersTable;
