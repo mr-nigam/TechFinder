@@ -1,29 +1,28 @@
 import jwt from 'jsonwebtoken';
-import bcrypt from "bcrypt";
-import pool from '../db/db.js';
-import asyncHandler from '../utils/asyncHandler.js';
-import ApiError from '../utils/apiError.js';
-import ApiResponse from '../utils/apiResponse.js';
+import bcrypt from 'bcrypt';
+import pool from '#config/db';
+import asyncHandler from '#utils/asyncHandler';
+import ApiError from '#utils/apiError';
+import ApiResponse from '#utils/apiResponse';
 
-import { stat } from 'node:fs';
 
 import { 
     uploadOnCloudinary,
     deleteFromCloudinary,
     removeLocalFile 
-} from '../utils/cloudinary.js';
+} from '#utils/cloudinary.util';
 
-import { hashPassword } from '../utils/user.utils.js';
+import hashPassword from '#util/password';
 
 import {
     hasEmpty,
     isValidUUID
-} from '../utils/validation.utils.js';
+} from '#utils/validation.utils';
 
 import {
     formatOwnAddress,
     formatAddressAssets
-} from '../utils/address.utils.js';
+} from '#utils/address.utils';
 
 
 const addAddress = asyncHandler(async (req, res) => {

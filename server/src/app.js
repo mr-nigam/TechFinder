@@ -2,8 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
-import ApiError from './utils/apiError.js';
-import errorHandler from './middlewares/errorHandler.js';
+import ApiError from '#utils/apiError';
+import errorHandler from '#middlewares/errorHandler';
 
 
 const app = express();

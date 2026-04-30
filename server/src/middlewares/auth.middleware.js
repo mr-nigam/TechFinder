@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken';
-import pool from '../db/db.js';
-import ApiError from '../utils/apiError.js';
-import asyncHandler from '../utils/asyncHandler.js';
+import pool from '#config/db';
+import ApiError from '#utils/apiError';
+import asyncHandler from '#utils/asyncHandler';
+
 
 
 const verifyJWT = asyncHandler(async (req, _, next) => {

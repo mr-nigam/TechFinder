@@ -1,41 +1,32 @@
-import pool from '../db/db.js';
+import pool from '#config/db';
 
 
-const createAddressesTable = async () => {
+const createAddressesAssetsTable = async () => {
     try {
         await pool.query(`
-            CREATE TABLE IF NOT EXISTS addresses (
+            CREATE TABLE IF NOT EXISTS address_assets  (
                 -- Keys
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 
-                user_id UUID NOT NULL 
+                address_id  UUID NOT NULL 
                     REFERENCES users(id) ON DELETE CASCADE,
 
-                -- Address 
-                address_line_1 TEXT NOT NULL,
-                address_line_2 TEXT,
-                landmark TEXT,
-
-                -- Region
-                city TEXT NOT NULL,
-                state TEXT NOT NULL,
-                country TEXT NOT NULL,
-                pincode VARCHAR(20) NOT NULL,
-
-                -- Geo
-                location GEOGRAPHY(POINT, 4326) NOT NULL,
-                location_accuracy_meters NUMERIC(8,2),
-                location_source VARCHAR(20) DEFAULT 'gps'
-                    CHECK (
-                    location_source IN (
-                        'gps',
-                        'manual_pin',
-                        'geocoded',
-                        'admin'
+                asset_type VARCHAR(20) NOT NULL
+                    CHECK (asset_type IN (
+                        'entrance_photo',
+                        'building_photo',
+                        'parking_photo',
+                        'video',
+                        'others'
                     )),
-                
-                -- Flags
-                is_default BOOLEAN DEFAULT FALSE,
+        
+                public_id TEXT NOT NULL,
+                asset_url TEXT NOT NULL,
+
+                size_bytes INT NOT NULL,
+                duration NUMBER(8,2),
+
+                sort_order INT DEFAULT 1,
 
                 -- Deleteion Status
                 is_deleted BOOLEAN DEFAULT FALSE,
@@ -72,4 +63,4 @@ const createAddressesTable = async () => {
 };
 
 
-export default createAddressesTable;
+export default createAddressesAssetsTable;

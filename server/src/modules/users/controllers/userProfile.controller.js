@@ -1,27 +1,29 @@
 import jwt from 'jsonwebtoken';
-import bcrypt from "bcrypt";
-import pool from '../db/db.js';
-import asyncHandler from '../utils/asyncHandler.js';
-import ApiError from '../utils/apiError.js';
-import ApiResponse from '../utils/apiResponse.js';
+import bcrypt from 'bcrypt';
+import pool from '#config/db';
+import asyncHandler from '#utils/asyncHandler';
+import ApiError from '#utils/apiError';
+import ApiResponse from '#utils/apiResponse';
 
-import { stat } from 'node:fs';
+
+import hashPassword from '#util/password';
+import formatOwnUser from '#user/password';
 
 import { 
     uploadOnCloudinary,
     deleteFromCloudinary,
     removeLocalFile 
-} from '../utils/cloudinary.js';
+} from '#utils/cloudinary.util';
 
-// Utility Functions
 import {
-    hashPassword,
-    getAccessCookieOptions,
-    getRefreshCookieOptions,
-    formatOwnUser,
-    formatPublicUser,
-    hasEmpty
-} from '../utils/user.utils.js';
+    hasEmpty,
+    isValidUUID
+} from '#utils/validation.utils';
+
+import {
+    generateAccessToken,
+    generateRefreshToken
+} from '#utils/tokens.util';
 
 
 const getMyProfile = asyncHandler(async (req, res) => {});

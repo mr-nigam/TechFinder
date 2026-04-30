@@ -1,16 +1,12 @@
-import { connectDB } from './db/db.js';
-import createUsersTable from './models/user.models.js';
-import createAddressTable from './models/address.models.js';
-import createContactsTable from './models/contact.models.js';
+import { connectDB } from '#config/db';
+import createUsersTable from '#modules/users/models/user.model';
+import createAddressTable from '#modules/users/models/address.model';
+import createContactsTable from '#modules/users/models/contact.model';
 
 
 const initDB = async () => {
     try {
         await connectDB();
-
-        await createUsersTable();
-        await createAddressTable();
-        await createContactsTable();
 
         console.log("All tables created successfully");
 

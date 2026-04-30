@@ -23,6 +23,7 @@ const formatBookingAddress = (address) => ({
 const formatAddressAssets = (address,assets) => ({ });
 const formatMultipleAddress = (address,assets) => ({ });
 
+
 export {
     formatOwnAddress,
     formatBookingAddress,

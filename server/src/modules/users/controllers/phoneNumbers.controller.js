@@ -1,17 +1,17 @@
-import pool from '../db/db.js';
-import asyncHandler from '../utils/asyncHandler.js';
-import ApiError from '../utils/apiError.js';
-import ApiResponse from '../utils/apiResponse.js';
+import pool from '#config/db';
+import asyncHandler from '#utils/asyncHandler';
+import ApiError from '#utils/apiError';
+import ApiResponse from '#utils/apiResponse';
 
 import {
     hasEmpty,
     isValidUUID
-} from '../utils/validation.utils.js';
+} from '#utils/validation.utils';
 
 import {
     isValidPhoneNumber,
     formatPhoneNumbers
-} from '../utils/phoneNumbers.utils.js';
+} from '#utils/phoneNumbers.utils';
 
 
 const addPhoneNumber = asyncHandler(async (req, res) => {

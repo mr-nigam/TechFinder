@@ -1,27 +1,27 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from "bcrypt";
-import pool from '../db/db.js';
-import asyncHandler from '../utils/asyncHandler.js';
-import ApiError from '../utils/apiError.js';
-import ApiResponse from '../utils/apiResponse.js';
+import pool from '#config/db';
 
-import { stat } from 'node:fs';
+import ApiError from '#utils/apiError';
+import ApiResponse from '#utils/apiResponse';
+import asyncHandler from '#utils/asyncHandler';
+
+import hashPassword from '#util/password';
 
 import { 
     uploadOnCloudinary,
     deleteFromCloudinary,
     removeLocalFile 
-} from '../utils/cloudinary.js';
+} from '#utils/cloudinary.util';
 
-// Utility Functions
 import {
-    hashPassword,
-    getAccessCookieOptions,
-    getRefreshCookieOptions,
     formatOwnUser,
-    hasEmpty
-} from '../utils/user.utils.js';
+} from '#utils/user.utils';
 
+import {
+    generateAccessToken,
+    generateRefreshToken
+} from '#utils/tokens.util';
 
 const registerUser = asyncHandler(async (req, res) => {
     let profilePictureLocalPath = "";
@@ -194,7 +194,7 @@ const logInUser = asyncHandler (async (req, res) => {
         );
     }
 
-    if(!paswword){
+    if(!password){
         throw new ApiError(
             404,"Please enter password"
         );

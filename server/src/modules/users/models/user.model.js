@@ -1,4 +1,4 @@
-import pool from '../db/db.js';
+import pool from '#config/db';
 
 
 const createUsersTable = async() => {
@@ -21,15 +21,15 @@ const createUsersTable = async() => {
                 email VARCHAR(100) UNIQUE NOT NULL,
 
                 -- Contact Details
-                primary_contact_number TEXT UNIQUE NOT NULL
+                primary_phone_number TEXT UNIQUE NOT NULL
                     CHECK (
-                        contact_number ~ '^[0-9]+$'
-                        AND length(primary_contact_number) BETWEEN 6 AND 15    
+                        primary_phone_number ~ '^[0-9]+$'
+                        AND length(primary_phone_number) BETWEEN 6 AND 15    
                     ),
 
                 country_code VARCHAR(5) NOT NULL,
 
-                is_primary_contact_number_verified BOOLEAN DEFAULT FALSE,
+                is_primary_phone_number_verified BOOLEAN DEFAULT FALSE,
 
                 -- Profile
                 gender VARCHAR(20) DEFAULT 'not shared'
@@ -40,7 +40,11 @@ const createUsersTable = async() => {
                         'not shared'
                     )),
 
-                date_of_birth DATE CHECK(age BETWEEN 0 AND 120),
+                date_of_birth DATE 
+                CHECK (
+                    date_of_birth <= CURRENT_DATE
+                    AND date_of_birth >= CURRENT_DATE - INTERVAL '120 years'
+                ),
 
                 profile_picture_publicid TEXT,
                 profile_picture_url TEXT,
@@ -80,6 +84,8 @@ const createUsersTable = async() => {
                 -- Deleteion Status
                 is_deleted BOOLEAN DEFAULT FALSE,
                 is_deactivated BOOLEAN DEFAULT FALSE,
+                deleted_at TIMESTAMPTZ
+                deactivated_at TIMESTAMPTZ
 
                 -- Audit
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,

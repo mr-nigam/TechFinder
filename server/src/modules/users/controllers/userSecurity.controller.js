@@ -1,21 +1,10 @@
 import jwt from 'jsonwebtoken';
-import bcrypt from "bcrypt";
-import pool from '../db/db.js';
-import asyncHandler from '../utils/asyncHandler.js';
-import ApiError from '../utils/apiError.js';
-import ApiResponse from '../utils/apiResponse.js';
+import bcrypt from 'bcrypt';
+import pool from '#config/db';
+import asyncHandler from '#utils/asyncHandler';
+import ApiError from '#utils/apiError';
+import ApiResponse from '#utils/apiResponse';
 
-import { stat } from 'node:fs';
-
-
-// Utility Functions
-import {
-    hashPassword,
-    getAccessCookieOptions,
-    getRefreshCookieOptions,
-    formatOwnUser,
-    hasEmpty
-} from '../utils/user.utils.js';
 
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {

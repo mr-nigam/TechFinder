@@ -1,4 +1,4 @@
-import pool from '../db/db.js';
+import pool from '#config/db';
 
 
 const createTechnicianSkillsTable = async() => {

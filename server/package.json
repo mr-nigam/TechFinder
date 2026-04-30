@@ -22,6 +22,12 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js"
   },
+    "imports": {
+    "#utils/*": "./src/utils/*.js",
+    "#config/*": "./src/config/*.js",
+    "#modules/*": "./src/modules/*.js",
+    "#middlewares/*": "./src/middlewares/*.js"
+  },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.9.0",
@@ -30,6 +36,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "module-alias": "^2.3.4",
     "morgan": "^1.10.1",
     "multer": "^2.1.1",
     "node": "^25.9.0",
