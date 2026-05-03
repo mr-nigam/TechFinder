@@ -54,19 +54,6 @@ const createUsersTable = async() => {
                 password TEXT NOT NULL,
                 password_changed_at TIMESTAMPTZ,
                 refresh_token TEXT,
-                
-                -- Geo
-                current_location GEOGRAPHY(POINT, 4326),
-                current_location_captured_at TIMESTAMPTZ,
-                current_location_accuracy_meters NUMERIC(8,2),
-                location_source VARCHAR(20) DEFAULT 'gps'
-                    CHECK (
-                    location_source IN (
-                        'gps',
-                        'manual_pin',
-                        'geocoded',
-                        'admin'
-                    )),
 
                 -- Account Status
                 is_email_verified BOOLEAN DEFAULT FALSE,
@@ -78,14 +65,19 @@ const createUsersTable = async() => {
                     DEFAULT 'user',
 
                 status VARCHAR(15) NOT NULL 
-                    CHECK(status IN ('active','blocked','suspended')) 
+                    CHECK(
+                        status IN (
+                            'active',
+                            'blocked',
+                            'suspended',
+                            'pending_delete'
+                        )) 
                     DEFAULT 'active',
 
-                -- Deleteion Status
-                is_deleted BOOLEAN DEFAULT FALSE,
-                is_deactivated BOOLEAN DEFAULT FALSE,
-                deleted_at TIMESTAMPTZ
-                deactivated_at TIMESTAMPTZ
+                -- Soft Delete / Deactivation
+                deleted_at TIMESTAMPTZ,
+                deactivated_at TIMESTAMPTZ,
+
 
                 -- Audit
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -95,7 +87,9 @@ const createUsersTable = async() => {
         
         await pool.query(`
             CREATE INDEX IF NOT EXISTS idx_users_current_location
-            ON users USING GIST(current_location);
+            ON users USING GIST(current_location)
+            WHERE deleted_at IS NULL
+                AND deactivated_at IS NULL;;
         `);
         
         console.log("User table and indexes created successfully");

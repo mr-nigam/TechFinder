@@ -23,6 +23,12 @@ import {
     generateRefreshToken
 } from '#utils/tokens.util';
 
+import { 
+    otpQueue,
+    emailQueue 
+} from './auth.queue.js';
+
+
 const registerUser = asyncHandler(async (req, res) => {
     let profilePictureLocalPath = "";
 
@@ -131,11 +137,20 @@ const registerUser = asyncHandler(async (req, res) => {
             );
         }
 
+        try {
+            await authQueue.add("sendWelcomeEmail", {
+                userId: user.id,
+                email: user.email
+            });
+        }catch(err){
+            console.error("Queue error:", err.message);
+        }
+
         return res
-        .status(200)
+        .status(201)
         .json(
             new ApiResponse(
-                200,
+                201,
                 {user: formatOwnUser(user)},
                 "User registered successfully"
             )

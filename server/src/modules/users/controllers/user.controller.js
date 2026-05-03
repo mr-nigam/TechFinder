@@ -25,7 +25,6 @@ import {
 } from '../utils/user.utils.js';
 
 
-// ACCOUNT
 const registerUser = asyncHandler(async (req, res) => {
     let profilePictureLocalPath = "";
 
