@@ -17,7 +17,7 @@ const deactivateAccount = asyncHandler(async (req, res) => {
 
     if(!password){
         throw new ApiError(
-            404,
+            400,
             "Please enter password"
         );
     }
@@ -36,7 +36,7 @@ const deactivateAccount = asyncHandler(async (req, res) => {
     if(result.rows.length === 0){
         throw new ApiError(
             404,
-            "User does not exist"
+            "Invalid credentials"
         );
     }
 
@@ -56,19 +56,15 @@ const deactivateAccount = asyncHandler(async (req, res) => {
         UPDATE users
         set 
             deactivated_at = NOW(),
-            user.status = 'pending_delete'
+            status = 'pending_delete'
         WHERE id = $1;
     `;
     
     result = await pool.query(query,[userId]);
 
     try{
-        
-        user.status = "pending_delete";
-        await user.save();
-
         await deActivateAccountQueue.add(
-            "deActivate-account",
+            "deactivate-account",
             { userId: user.id },
             { jobId: `deActivate-${user.id}`}
         );
@@ -92,7 +88,10 @@ const deactivateAccount = asyncHandler(async (req, res) => {
 });
 
 const reactivateAccount = asyncHandler(async (req, res) => {
+    const client = await pool.connect();
+
     try{
+        await client.query("BEGIN");
         const{
             email = "",
             username = "",
@@ -111,7 +110,7 @@ const reactivateAccount = asyncHandler(async (req, res) => {
         if(!normalized.password){
             throw new ApiError(
                 400, 
-                "Password is required"
+                "Please enter password"
             );
         }
 
@@ -156,7 +155,7 @@ const reactivateAccount = asyncHandler(async (req, res) => {
         if (!user) {
             throw new ApiError(
                 404,
-                "User not found"
+                "Invalid credentials"
             );
         }
 
@@ -169,7 +168,7 @@ const reactivateAccount = asyncHandler(async (req, res) => {
             throw new ApiError(401, "Invalid credentials");
         }
 
-        if(!user.deleted_at){
+        if(!user.deleted_at && !user.deactivated_at){
             throw new ApiError(
                 400,
                 "Account is not scheduled for deletion"
@@ -177,7 +176,7 @@ const reactivateAccount = asyncHandler(async (req, res) => {
         }
         
         query = `
-            UPDATE 
+            UPDATE users
             SET deleted_at = NULL,
                 deactivated_at = NULL,
                 status = 'active'
@@ -195,7 +194,8 @@ const reactivateAccount = asyncHandler(async (req, res) => {
         if(job){
             await job.remove();
         }   
-
+        
+        await client.query("COMMIT");
         return res
         .status(200)
         .json(
@@ -206,11 +206,16 @@ const reactivateAccount = asyncHandler(async (req, res) => {
             )
         );
     }catch(err){
+        await client.query("ROLLBACK");
+
         console.error(err);
         throw new ApiError(
             404,
             err.message || "Account reactivation failed"
-        )
+        );
+
+    }finally{
+        client.release();
     }
 });
 
@@ -220,7 +225,7 @@ const deleteAccount = asyncHandler(async (req, res) => {
 
     if(!password){
         throw new ApiError(
-            404,
+            400,
             "Please enter password"
         );
     }
@@ -239,7 +244,7 @@ const deleteAccount = asyncHandler(async (req, res) => {
     if(result.rows.length === 0){
         throw new ApiError(
             404,
-            "User does not exist"
+            "Invalid credentials"
         );
     }
 
