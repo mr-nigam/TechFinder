@@ -8,6 +8,16 @@ import asyncHandler from '#utils/asyncHandler';
 
 import hashPassword from '#util/password';
 
+import redisConnection from '#config/redis';
+
+import { 
+    getCache,
+    setCache,
+    deleteCache,
+    deleteMultipleCache
+} from '#utils/cache.util';
+
+
 import { 
     uploadOnCloudinary,
     deleteFromCloudinary,
@@ -201,9 +211,9 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const logInUser = asyncHandler (async (req, res) => {
     const email = req.body.email?.trim().replace(/"/g, "") || "";
-    const username = req.body.username?.trim();
+    const username = req.body.username?.trim() || "";
     const primary_contact_number = req.body.primary_contact_number?.trim()|| "";
-    const password = req.body.paswword?.trim() || "";
+    const password = req.body.password?.trim() || "";
 
     if(!email && !username && !primary_contact_number){
         throw new ApiError(
@@ -218,29 +228,39 @@ const logInUser = asyncHandler (async (req, res) => {
         );
     }
 
-    let filter = "";
-    if(email) filter = email; 
-    if(username) filter = username; 
-    if(primary_contact_number) filter = primary_contact_number; 
-
-    let query = `
-        SELECT id, username, email, password 
-        FROM users
-        WHERE email = $1
-            OR username = $1
-            OR primary_contact_number = $1
-        LIMIT 1; 
-    `;
     
-    let result = await pool.query(query,[filter]);
+    const filter = email || username || primary_contact_number; 
 
-    let user = result.rows[0];
+     
+    let cacheKey = `auth:user:${filter}`;
+    let user;
 
+    // Try Redis
+    user = await getCache(cacheKey);
+    
     if(!user){
-        throw new ApiError(
-            400,
-            "Invalid credentials"
-        );
+        const query = `
+            SELECT id, username, email, password 
+            FROM users
+            WHERE (email = $1
+                    OR username = $1
+                    OR primary_contact_number = $1
+                )
+                AND deleted_at IS NULL
+                AND deactivated_at IS NULL
+            LIMIT 1; 
+        `;
+        
+        const result = await pool.query(query,[filter]);
+
+        user = result.rows[0];
+
+        if(!user){
+            throw new ApiError(
+                400,
+                "Invalid credentials"
+            );
+        }
     }
 
     const isMatch = await bcrypt.compare(password,user.password);
@@ -250,49 +270,59 @@ const logInUser = asyncHandler (async (req, res) => {
             "Invalid credentials"
         );
     }
-    
+        
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
-    
-    const query = `
+        
+    let query = `
         UPDATE users
         SET refresh_token = $1,
             updated_at = NOW()
         WHERE id = $2
         RETURNING *;
     `;
-    result = await pool.query(query,[refreshToken,user.id]);
     
-    user = result.rows[0]
+    const result = await pool.query(query,[refreshToken,user.id]);
+    user = result.rows[0];
+
+    await setCache(cacheKey, user, 600);
 
     return res
-    .status(201)
-    .cookie("accessToken",accessToken,getAccessCookieOptions())
-    .cookie("refreshToken",refreshToken,getRefreshCookieOptions())
-    .json(
-        new ApiResponse(
-            201,
-            {user: formatOwnUser(user)},
-            "User logged in successfully"
-        )
-    );
+        .status(200)
+        .cookie("accessToken",accessToken,getAccessCookieOptions())
+        .cookie("refreshToken",refreshToken,getRefreshCookieOptions())
+        .json(
+            new ApiResponse(
+                200,
+                {user: formatOwnUser(user)},
+                "User logged in successfully"
+            )
+        );
 
 });
 
 const logOutUser = asyncHandler (async (req, res) => {
+    const user = req.user;
+
     const query = `
         UPDATE users
         SET refresh_token = NULL,
-            update_at = NOW()
+            updated_at = NOW()
         WHERE id = $1;
     `;
 
-    await pool.query(query,[req.user.id]);
+    const result = await pool.query(query,[user.id]);
+
+    const cacheKeys = [
+        `auth:user:${user.username}`,
+        `auth:user:${user.email}`,
+        `auth:user:${user.primary_contact_number}`
+    ].filter(Boolean);
+
+    await deleteMultipleCache(cacheKeys); 
 
     return res
         .status(200)
-        .clearCookie("accessToken",getAccessCookieOptions())
-        .clearCookie("refreshToken",getRefreshCookieOptions())
         .json(
             new ApiResponse(
                 200,
@@ -324,7 +354,8 @@ const refreshAccessToken = asyncHandler (async (req, res) => {
             FROM users
             WHERE id = $1
                 AND refresh_token = $2
-                AND is_deleted = false
+                AND deleted_at IS NULL
+                AND deactivated_at IS NULL
             LIMIT 1;
         `;
 
@@ -357,16 +388,16 @@ const refreshAccessToken = asyncHandler (async (req, res) => {
         await pool.query(query,[refreshToken, user.id]);
         
         return res
-        .status(201)
-        .cookie("accessToken",accessToken,getAccessCookieOptions())
-        .cookie("refreshToken",refreshToken,getRefreshCookieOptions())
-        .json(
-            new ApiResponse(
-                201,
-                {user: formatOwnUser(user)},
-                "Access token refreshed successfully"
-            )
-        );
+            .status(200)
+            .cookie("accessToken",accessToken,getAccessCookieOptions())
+            .cookie("refreshToken",refreshToken,getRefreshCookieOptions())
+            .json(
+                new ApiResponse(
+                    200,
+                    {user: formatOwnUser(user)},
+                    "Access token refreshed successfully"
+                )
+            );
 
     }catch(err){
         throw new ApiError(

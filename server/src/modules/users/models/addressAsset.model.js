@@ -28,12 +28,11 @@ const createAddressesAssetsTable = async () => {
                 sort_order INT DEFAULT 1,
 
                 -- Deleteion Status
-                is_deleted BOOLEAN DEFAULT FALSE,
+                deleted_at TIMESTAMPTZ,
 
                 -- Audit
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                deleted_at TIMESTAMPTZ,
+                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             );
         `);
 

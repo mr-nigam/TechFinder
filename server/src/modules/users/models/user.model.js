@@ -92,6 +92,7 @@ const createUsersTable = async() => {
                 AND deactivated_at IS NULL;;
         `);
         
+        // put indexing on email, username, number,and trigger on update
         console.log("User table and indexes created successfully");
     }catch(err){
 

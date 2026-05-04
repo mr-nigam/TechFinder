@@ -12,7 +12,6 @@ const accountDeletionQueue = new Queue("accountDeletionQueue",{
         },
         removeOnComplete: 50,
         removeOnFail: 100,
-        delay: 30 * 24 * 60 * 60 * 1000 // 30 days in milliseconds
     },
 });
 

@@ -6,11 +6,16 @@ import ApiError from '#utils/apiError';
 import ApiResponse from '#utils/apiResponse';
 
 import accountDeletionQueue from '../jobs/userAccount.queue.js';
+import emailQueue from '../jobs/email.queue.js';
+
+import {
+    deleteMultipleCache
+} from '#utils/cache.util';
 
 
 const deactivateAccount = asyncHandler(async (req, res) => {
+    const user = req.user;
     const password = req.body.password?.trim() || "";
-    const userId = req.user.id;
 
     if(!password){
         throw new ApiError(
@@ -19,16 +24,23 @@ const deactivateAccount = asyncHandler(async (req, res) => {
         );
     }
 
+    const cacheKeys = [
+        `auth:user:${user.username}`,
+        `auth:user:${user.email}`,
+        `auth:user:${user.primary_contact_number}`
+    ].filter(Boolean);
+
+
     let query = `
         SELECT 
-        password
+            password
         FROM users
         WHERE id = $1
             AND deactivated_at IS NULL
             AND deleted_at IS NULL;
     `;
 
-    let result = await pool.query(query, [userId]);
+    let result = await pool.query(query, [user.id]);
 
     if(result.rows.length === 0){
         throw new ApiError(
@@ -38,8 +50,6 @@ const deactivateAccount = asyncHandler(async (req, res) => {
     }
 
     let oldHashedpassword = result.rows[0].password;
-
-
     let isMatch = await bcrypt.compare(password, oldHashedpassword);
 
     if(!isMatch){
@@ -53,28 +63,47 @@ const deactivateAccount = asyncHandler(async (req, res) => {
         UPDATE users
         set 
             deactivated_at = NOW(),
-            status = 'pending_delete'
+            updated_at = NOW(),
+            refresh_token = NULL
         WHERE id = $1;
     `;
     
-    result = await pool.query(query,[userId]);
+    result = await pool.query(query,[user.id]);
 
     try{
         await accountDeletionQueue.add(
             "deactivate-account",
             { userId: user.id },
-            { jobId: `deActivate-${user.id}`},
-            { 
+            {   
+                jobId: `deActivate:${user.id}`,
                 delay: 90 * 24 * 60 * 60 * 1000 // 90 days in milliseconds
             }
-        );
-        
+        );    
         console.log("Account scheduled for deactivation/deletion in 90 days.");
-
     }catch(err){
-
         console.error("Queue error:", err.message);
     }
+    
+    try{
+        await emailQueue.add(
+            "request-deactivate-account",
+            {
+                userId: user.id,
+                email: user.email,
+                username: user.username,
+                first_name: user.first_name,
+                last_name: user.last_name,
+            },
+            {
+                jobId: `user:-deactivated:${user.id}`
+            }
+        );
+        console.log("Email will be sent for Account deactivation/deletion in 90 days.");
+    }catch(err){
+        console.error("Queue error:", err.message);
+    }
+
+    await deleteMultipleCache(cacheKeys);
 
     return res
     .status(200)
@@ -148,7 +177,7 @@ const reactivateAccount = asyncHandler(async (req, res) => {
             LIMIT 1;
         `;
 
-        let result = await pool.query(query,[value]);
+        let result = await client.query(query,[value]);
 
         let user = result.rows[0];
 
@@ -183,28 +212,26 @@ const reactivateAccount = asyncHandler(async (req, res) => {
             WHERE id = $1;
         `;
 
-        await pool.query(query,[user.id]);
+        await client.query(query,[user.id]);
 
-        let job = await deleteAccountQueue.getJob(`delete-${user.id}`);
-        if(job){
-            await job.remove();
-        }
+        let job = await accountDeletionQueue.getJob(`delete:${user.id}`);
+        
+        if(job) await job.remove();
 
-        job = await deActivateAccountQueue.getJob(`deActivate-${user.id}`);
-        if(job){
-            await job.remove();
-        }   
+        job = await accountDeletionQueue.getJob(`deActivate:${user.id}`);
+        if(job) await job.remove();
         
         await client.query("COMMIT");
+
         return res
-        .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                {},
-                "Account reactivated successfully login to use"
-            )
-        );
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    {},
+                    "Account reactivated successfully login to use"
+                )
+            );
     }catch(err){
         await client.query("ROLLBACK");
 
@@ -220,15 +247,21 @@ const reactivateAccount = asyncHandler(async (req, res) => {
 });
 
 const deleteAccount = asyncHandler(async (req, res) => {
+    const user = req.user;
     const password = req.body.password?.trim() || "";
-    const userId = req.user.id;
-
+    
     if(!password){
         throw new ApiError(
             400,
             "Please enter password"
         );
     }
+
+    const cacheKeys = [
+        `auth:user:${user.username}`,
+        `auth:user:${user.email}`,
+        `auth:user:${user.primary_contact_number}`
+    ].filter(Boolean);
 
     let query = `
         SELECT 
@@ -239,7 +272,7 @@ const deleteAccount = asyncHandler(async (req, res) => {
             AND deleted_at IS NULL;
     `;
 
-    let result = await pool.query(query, [userId]);
+    let result = await pool.query(query, [user.id]);
 
     if(result.rows.length === 0){
         throw new ApiError(
@@ -263,44 +296,58 @@ const deleteAccount = asyncHandler(async (req, res) => {
     query = `
         UPDATE users
         set
-            deleted_at = true,
-            user.status = 'pending_delete'
+            deleted_at = NOW(),
+            refresh_token = NULL
         WHERE id = $1;
     `;
     
-    result = await pool.query(query,[userId]);
+    await pool.query(query,[user.id]);
 
     try{
-        
-        user.status = "pending_delete";
-        await user.save();
-
         await accountDeletionQueue.add(
             "delete-account",
             { userId: user.id },
-            { jobId: `delete-${user.id}`},
             { 
+                jobId: `delete:${user.id}`,
                 delay: 30 * 24 * 60 * 60 * 1000 // 30 days in milliseconds
             }
         );
-        
+
         console.log("Account scheduled for deletion in 30 days.");
-
     }catch(err){
-
         console.error("Queue error:", err.message);
     }
 
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(
-            200,
-            {},
-            "User deletied successfully"
-        )
-    )
+    try{
+        await emailQueue.add(
+            "request-delete-account",
+            {
+                userId: user.id,
+                email: user.email,
+                username: user.username,
+                first_name: user.first_name,
+                last_name: user.last_name,
+            },
+            {
+                jobId: `user:-deleted:${user.id}`
+            }
+        );
+        console.log("Email will be sent for Account deactivation/deletion in 30 days.");
+    }catch(err){
+        console.error("Queue error:", err.message);
+    }
 
+    await deleteMultipleCache(cacheKeys);
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {},
+                "User deleteed successfully"
+            )
+        );
 });
 
 

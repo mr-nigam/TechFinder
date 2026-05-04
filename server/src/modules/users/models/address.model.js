@@ -38,12 +38,11 @@ const createAddressesTable = async () => {
                 is_default BOOLEAN DEFAULT FALSE,
 
                 -- Deleteion Status
-                is_deleted BOOLEAN DEFAULT FALSE,
+                deleted_at TIMESTAMPTZ,
 
                 -- Audit
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                deleted_at TIMESTAMPTZ,
+                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             );
         `);
 
