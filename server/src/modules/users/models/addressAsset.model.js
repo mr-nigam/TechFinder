@@ -9,14 +9,13 @@ const createAddressesAssetsTable = async () => {
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 
                 address_id  UUID NOT NULL 
-                    REFERENCES users(id) ON DELETE CASCADE,
+                    REFERENCES addresses(id) ON DELETE CASCADE,
 
                 asset_type VARCHAR(20) NOT NULL
                     CHECK (asset_type IN (
                         'entrance_photo',
                         'building_photo',
                         'parking_photo',
-                        'video',
                         'others'
                     )),
         

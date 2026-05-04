@@ -13,9 +13,12 @@ import {
     formatPhoneNumbers
 } from '#utils/phoneNumbers.utils';
 
+import emailQueue from '../jobs/email.queue.js';
+import phoneNumberDeleteQueue from '../jobs/phoneNumber.queue.js';
 
 const addPhoneNumber = asyncHandler(async (req, res) => {
     const client = await pool.connect();
+    const user = req.user;
 
     try{
         await client.query("BEGIN");
@@ -92,7 +95,7 @@ const addPhoneNumber = asyncHandler(async (req, res) => {
             values
         );
 
-        const phoneNumber = result.rows[0];
+        const ph = result.rows[0];
         
         if(!phoneNumber){
             throw new ApiError(
@@ -102,6 +105,18 @@ const addPhoneNumber = asyncHandler(async (req, res) => {
         }
         
         await client.query("COMMIT");
+
+        try{
+            await emailQueue.add("new-number-added", {
+                userId: user.id,
+                username: user.username,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                phoneNumber: ph.phone_number
+            });
+        }catch(err){
+            console.error("Queue error:", err.message);
+        }
 
         return res
         .status(201)
@@ -218,11 +233,12 @@ const getPhoneNumberById = asyncHandler(async (req, res) => {
 
 const deletePhoneNumber = asyncHandler(async (req, res) => {
     const phoneNumberId = req.params.phoneNumberId;
-    
+    const user = req.user
+
     if(!isValidUUID(phoneNumberId)){
         throw new ApiError(
             404,
-            "INvalid phone number id"
+            "Invalid phone number id"
         );
     }
 
@@ -232,22 +248,47 @@ const deletePhoneNumber = asyncHandler(async (req, res) => {
 
     const query = `
         UPDATE phone_numbers
-        SET is_deleted = true
+        SET deleted_at = NOW()
         WHERE id = $1
             AND user_id = $2
-            AND is_deleted = false;
+            AND deleted_at IS NULL;
     `;
 
     const result = await pool.query(
         query,
-        [phoneNumberId,req.user.id]
+        [phoneNumberId, user.id]
     );
 
+    const ph = result.rows[0];
     if(result.rowCount === 0){
         throw new ApiError(
             400,
             "Phone number not found"
         );
+    }
+
+    try{
+        await phoneNumberDeleteQueue.add(
+            "delete-phone-number",
+            {
+                userId: user.id,
+                phoneNumberId: phoneNumberId,
+            }
+        );
+    }catch(err){
+        console.error("Queue error:", err.message);       
+    }
+
+    try{
+        await emailQueue.add("deleted-phone-number", {
+            userId: user.id,
+            username: user.username,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            phoneNumber: ph.phone_number
+        });
+    }catch(err){
+        console.error("Queue error:", err.message);
     }
 
     return res
@@ -264,7 +305,8 @@ const deletePhoneNumber = asyncHandler(async (req, res) => {
 
 const setDefaultPhoneNumber = asyncHandler(async (req, res) => {
     const phoneNumberId = req.params.phoneNumberId;
-    
+    const user = req.user;
+
     if(!isValidUUID(phoneNumberId)){
         throw new ApiError(
             404,
@@ -284,7 +326,7 @@ const setDefaultPhoneNumber = asyncHandler(async (req, res) => {
                 ELSE false
             END
             WHERE user_id = $2
-                AND is_deleted = false
+                AND deleted_at IS NULL
             RETURNING *;
         `;
 
@@ -309,8 +351,8 @@ const setDefaultPhoneNumber = asyncHandler(async (req, res) => {
                 country_code = $2,
                 is_primary_contact_number_verified = $3,
             WHERE id = $4
-                AND is_deleted = false
-                AND is_deactivated = false; 
+                AND deleted_at IS NULL
+                AND deactivated_at IS NULL; 
         `;
 
         let values = [
@@ -331,8 +373,20 @@ const setDefaultPhoneNumber = asyncHandler(async (req, res) => {
                 "Setting default phone number failed"
             );
         }
-
+        const ph = resul
         await client.query("COMMIT");
+
+        try{
+            await emailQueue.add("set-default-phone-number", {
+                userId: user.id,
+                username: user.username,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                phoneNumber: newDefaultNumber.phone_number
+            });
+        }catch(err){
+            console.error("Queue error:", err.message);
+        }
 
         return res
         .status(200)

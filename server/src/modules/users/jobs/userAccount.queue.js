@@ -2,7 +2,7 @@ import { Queue } from 'bullmq';
 import redisConnection from '#config/redis';
 
 
-const deleteAccountQueue = new Queue("deleteAccountQueue",{
+const accountDeletionQueue = new Queue("accountDeletionQueue",{
     connection: redisConnection,
     defaultJobOptions: {
         attempts: 10,
@@ -16,22 +16,5 @@ const deleteAccountQueue = new Queue("deleteAccountQueue",{
     },
 });
 
-const deActivateAccountQueue = new Queue("deleteAccountQueue",{
-    connection: redisConnection,
-    defaultJobOptions: {
-        attempts: 10,
-        backoff: {
-            type: "exponential",
-            delay: 3000
-        },
-        removeOnComplete: 50,
-        removeOnFail: 100,
-        delay: 90 * 24 * 60 * 60 * 1000 // 90 days in milliseconds
-    }
-});
 
-
-export {
-    deleteAccountQueue,
-    deActivateAccountQueue
-}
+export default accountDeletionQueue;

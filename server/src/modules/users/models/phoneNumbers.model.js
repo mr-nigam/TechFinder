@@ -34,8 +34,8 @@ const createPhoneNumbersTable = async() => {
                 -- Verification
                 is_verified BOOLEAN DEFAULT FALSE,
                 
-                -- Deleteion Status
-                is_deleted BOOLEAN DEFAULT FALSE,
+                -- Soft Deleteion
+                deleted_at TIMESTAMPTZ,
                 
                 -- Audit
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -50,7 +50,7 @@ const createPhoneNumbersTable = async() => {
         await pool.query(`
             CREATE INDEX IF NOT EXISTS idx_phone_numbers_user_id
             ON phone_numbers(user_id)
-            WHERE is_deleted = false;
+            WHERE is_deleted IS NULL;
         `);
 
         console.log("Phone Numbers table and indexes created successfully");

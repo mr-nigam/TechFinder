@@ -5,10 +5,7 @@ import asyncHandler from '#utils/asyncHandler';
 import ApiError from '#utils/apiError';
 import ApiResponse from '#utils/apiResponse';
 
-import {
-    deleteAccountQueue,
-    deActivateAccountQueue
-} from '../jobs/userAccount.queue.js';
+import accountDeletionQueue from '../jobs/userAccount.queue.js';
 
 
 const deactivateAccount = asyncHandler(async (req, res) => {
@@ -63,10 +60,13 @@ const deactivateAccount = asyncHandler(async (req, res) => {
     result = await pool.query(query,[userId]);
 
     try{
-        await deActivateAccountQueue.add(
+        await accountDeletionQueue.add(
             "deactivate-account",
             { userId: user.id },
-            { jobId: `deActivate-${user.id}`}
+            { jobId: `deActivate-${user.id}`},
+            { 
+                delay: 90 * 24 * 60 * 60 * 1000 // 90 days in milliseconds
+            }
         );
         
         console.log("Account scheduled for deactivation/deletion in 90 days.");
@@ -275,10 +275,13 @@ const deleteAccount = asyncHandler(async (req, res) => {
         user.status = "pending_delete";
         await user.save();
 
-        await deleteAccountQueue.add(
+        await accountDeletionQueue.add(
             "delete-account",
             { userId: user.id },
-            { jobId: `delete-${user.id}`}
+            { jobId: `delete-${user.id}`},
+            { 
+                delay: 30 * 24 * 60 * 60 * 1000 // 30 days in milliseconds
+            }
         );
         
         console.log("Account scheduled for deletion in 30 days.");

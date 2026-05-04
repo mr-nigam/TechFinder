@@ -2,7 +2,7 @@ import { Queue } from "bullmq";
 import redisConnection from "#config/redis";
 
 
-const phoneNumberQueue = async("phoneNumberQueue",{
+const phoneNumberDeleteQueue = async("phoneNumberDeleteQueue",{
     connection: redisConnection,
     defaultJobOptions: {
         attempts: 2,
@@ -15,3 +15,5 @@ const phoneNumberQueue = async("phoneNumberQueue",{
     }
 });
 
+
+export default phoneNumberDeleteQueue;

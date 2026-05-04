@@ -137,10 +137,13 @@ const registerUser = asyncHandler(async (req, res) => {
             );
         }
 
-        try {
-            await authQueue.add("sendWelcomeEmail", {
+        try{
+            await emailQueue.add("sendWelcomeEmail", {
                 userId: user.id,
-                email: user.email
+                email: user.email,
+                username: user.username,
+                first_name: user.first_name,
+                last_name: user.last_name
             });
         }catch(err){
             console.error("Queue error:", err.message);
