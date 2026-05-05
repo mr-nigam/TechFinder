@@ -4,8 +4,7 @@ import pool from '#config/db';
 const createAddressesAssetsTable = async () => {
     try {
         await pool.query(`
-            CREATE TABLE IF NOT EXISTS address_assets  (
-                -- Keys
+            CREATE TABLE IF NOT EXISTS address_assets(
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 
                 address_id  UUID NOT NULL 
@@ -16,47 +15,41 @@ const createAddressesAssetsTable = async () => {
                         'entrance_photo',
                         'building_photo',
                         'parking_photo',
+                        'videos',
                         'others'
                     )),
         
-                public_id TEXT NOT NULL,
-                asset_url TEXT NOT NULL,
+                public_id TEXT UNIQUE NOT NULL,
+                asset_url TEXT NOT NULL
+                    CHECK (asset_url ~ '^https?://'),
 
                 size_bytes INT NOT NULL,
-                duration NUMBER(8,2),
+                duration NUMERIC(8,2)
+                    CHECK (
+                        (asset_type = 'videos' AND duration IS NOT NULL)
+                        OR (asset_type != 'videos')
+                    ),
 
-                sort_order INT DEFAULT 1,
+                sort_order INT DEFAULT 1
+                    CHECK (sort_order >= 1),
 
-                -- Deleteion Status
                 deleted_at TIMESTAMPTZ,
-
-                -- Audit
+                
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             );
         `);
 
-        // Indexing
         await pool.query(`
-            CREATE INDEX IF NOT EXISTS idx_addresses_user_id 
-            ON addresses(user_id);
-        `);
-
-        await pool.query(`
-            CREATE INDEX IF NOT EXISTS idx_addresses_location
-            ON addresses USING GIST(location);
+            CREATE INDEX IF NOT EXISTS idx_addresses_address_id 
+            ON address_assets(address_id)
+            WHERE deleted_at IS NULL;
         `);
         
-        await pool.query(`
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_one_default_address
-            ON addresses(user_id)
-            WHERE is_default = TRUE;
-        `);
-
-        console.log("Addresses table and indexes created successfully");
+        console.log("Addresses assests table and indexes created successfully");
 
     }catch(err){
-        console.error("Addresses Table creation failed", err);
+        console.error("Addresses assests table creation failed", err);
     }
 };
 

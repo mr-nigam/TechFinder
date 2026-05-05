@@ -1,32 +1,44 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import pool from '#config/db';
-import asyncHandler from '#utils/asyncHandler';
-import ApiError from '#utils/apiError';
-import ApiResponse from '#utils/apiResponse';
+import redisConnection from '#config/redis';
 
-import { 
-    uploadOnCloudinary,
-    deleteFromCloudinary,
-    removeLocalFile 
-} from '#utils/cloudinary.util';
-
-import hashPassword from '#util/password';
+import ApiError from '#shared/utils/apiError';
+import ApiResponse from '#shared/utils/apiResponse';
+import asyncHandler from '#shared/utils/asyncHandler';
+import hashPassword from '#shared/util/password';
+import removeLocalFile from '#shared/utils/file';
 
 import {
     hasEmpty,
     isValidUUID
-} from '#utils/validation.utils';
+} from '#shared/utils/validation.utils';
+
+import { 
+    uploadOnCloudinary,
+    deleteFromCloudinary,
+} from '#shared/services/storage.service';
+
 
 import {
     formatOwnAddress,
     formatAddressAssets
-} from '#utils/address.utils';
+} from '#shared/utils/address.utils';
+
+import client from '#lib/twilioClient';
+
+import { 
+    getCache,
+    setCache,
+    deleteCache,
+    deleteMultipleCache
+} from '#lib/cache';
 
 import {
     addressQueue,
     emailQueue
 } from '../jobs/address.queue.js';
+
 
 
 const addAddress = asyncHandler(async (req, res) => {
@@ -339,23 +351,10 @@ const deleteAddress = asyncHandler(async (req, res) => {
                 "Address not found"
             );
         }
- 
-        query = `
-            UPDATE 
-            address_assets
-            SET deleted_at = NOW()
-            WHERE address_id = $1
-                AND deleted_at IS NULL
-            RETURNING id, public_id;
-        `;
-
-        result = await client.query( query, [addressId]);
-
-        let assets = result.rows;
 
         await client.query("COMMIT");
 
-         try{
+        try{
             await addressQueue.add(
                 "delete-address",
                 { 
@@ -365,29 +364,6 @@ const deleteAddress = asyncHandler(async (req, res) => {
             );
 
             console.log("Address scheduled for deletion.");
-        
-        }catch(err){
-            console.error("Queue error:", err.message);
-        }
-
-        try{
-            await Promise.all(
-                assets.map(ast =>
-                    addressQueue.add(
-                        "delete-address-asset",
-                        {
-                            assetId: ast.id,
-                            publicId: ast.public_id
-                        },
-                        {
-                            jobId: `delete:asset:${ast.id}`,
-                            delay: 1 * 24 * 60 * 60 * 1000 // 1 days in milliseconds
-                        }
-                    )
-                )
-            );
-            
-            console.log("Address assets scheduled for deletion.");
         
         }catch(err){
             console.error("Queue error:", err.message);
@@ -591,21 +567,19 @@ const updateAddress = asyncHandler(async (req, res) => {
 
 const updateAddressLocation = asyncHandler(async (req, res) => { });
 
-const addAddressesAssests = asyncHandler(async (req, res) => { });
+const addAddressesAssets = asyncHandler(async (req, res) => { });
 
-const getAddressesAssests = asyncHandler(async (req, res) => { });
-
-const updateAddressAssests = asyncHandler(async (req, res) => { });
+const updateAddressAssets = asyncHandler(async (req, res) => { });
 
 
 export {
     addAddress,
-    addAddressesAssests,
-    getMyAddresses,
     getAddressById,
-    getAddressesAssests,
-    updateAddress,
-    updateAddressAssests,
+    getMyAddresses,
     deleteAddress,
     changeDefaultAddress,
+    updateAddress,
+    updateAddressLocation,
+    addAddressesAssets,
+    updateAddressAssets
 }

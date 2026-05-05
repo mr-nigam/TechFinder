@@ -1,85 +1,278 @@
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
 import pool from '#config/db';
 import asyncHandler from '#utils/asyncHandler';
 import ApiError from '#utils/apiError';
 import ApiResponse from '#utils/apiResponse';
-
-
-import hashPassword from '#util/password';
-import formatOwnUser from '#user/password';
+import redisConnection from '#config/redis';
+import formatMyProfile from '#utils/user.util';
+import deleteFromCloudinaryQueue from '#utils/cloudinary.jobs';
 
 import { 
+    getCache,
+    setCache,
+    deleteCache,
+} from '#lib/cache';
+
+import {
     uploadOnCloudinary,
     deleteFromCloudinary,
-    removeLocalFile 
+    removeLocalFile
 } from '#utils/cloudinary.util';
 
-import {
-    hasEmpty,
-    isValidUUID
-} from '#utils/validation.utils';
 
-import {
-    generateAccessToken,
-    generateRefreshToken
-} from '#utils/tokens.util';
-
+const USER_PROFILE_FIELDS = `
+    id,
+    username,
+    email,
+    first_name,
+    last_name,
+    primary_phone_number,
+    country_code,
+    is_primary_phone_number_verified,
+    gender,
+    profile_picture_url,
+    bio,
+    is_email_verified,
+    role,
+    status,
+    total_bookings,
+    total_money_spend,
+    total_money_save
+`;
 
 const getMyProfile = asyncHandler(async (req, res) => {
-    const query = `
-        SELECT
-            username,
-            first_name,
-            last_name,
-            email,
-            primary_phone_number,
-            country_code,
-            is_primary_phone_number_verified,
-            gender,
-            profile_picture_url,
-            bio,
-            is_email_verified,
-            role,
-            status
-        FROM users
-        WHERE id = $1
-          AND NOT is_deleted
-          AND NOT is_deactivated;
-    `;
+    const user = req.user;
 
-    const { rows } = await pool.query(
-        query, 
-        [req.user.id]
-    );
+    const cacheKey = `profile:user:${user.id}`;
+    
+    let myProfile;
 
-    const user = rows[0];
+    try{
+        myProfile = await getCache(cacheKey);
+    }catch(err){
+        console.error("Redis GET failed:", err.message);
+    }
+    
+    if(!myProfile || Object.keys(myProfile).length === 0){
+        const query = `
+            SELECT
+                ${USER_PROFILE_FIELDS}
+            FROM users
+            WHERE id = $1
+                AND deleted_at IS NULL
+                AND deactivated_at IS NULL;
+        `;
 
-    if (!user) {
+        const result = await pool.query(query, [user.id]);
+        const user = result.rows[0];
+        
+        if(!user){
+            throw new ApiError(
+                404, 
+                "User not found"
+            );
+        }
+
+        myProfile = formatMyProfile(user);
+
+        try{
+            await setCache(cacheKey,myProfile,600);
+        }catch(err){
+            console.error("Redis SET failed:", err.message);
+        }
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                myProfile,
+                "User profile fetched successfully"
+            )
+        );
+});
+
+const updateUserProfile = asyncHandler(async (req, res) => {
+    const user = req.user;
+
+    try{
+        const {
+            first_name = "",
+            last_name = "",
+            bio = "",
+            gender = "",
+            date_of_birth = null
+        } = req.body;
+
+        const normalized = {
+            first_name: first_name.trim(),
+            last_name: last_name.trim(),
+            bio: bio?.trim() ?? null,
+            gender: gender?.trim() || "not shared",
+            date_of_birth: date_of_birth || null
+        };
+
+        if(
+            !normalized.first_name || 
+            !normalized.last_name
+        ) {
+            throw new ApiError(
+                400,
+                "First name and last name are required"
+            );
+        }
+
+        const query = `
+            UPDATE users
+            SET first_name = $1,
+                last_name = $2,
+                bio = $3,
+                gender = $4,
+                date_of_birth = $5
+            WHERE id = $6
+                AND deleted_at IS NULL
+                AND deactivated_at IS NULL;
+            RETURNING ${USER_PROFILE_FIELDS};
+        `;
+
+        const values = [
+            normalized.first_name, 
+            normalized.last_name,
+            normalized.bio,
+            normalized.gender,
+            normalized.date_of_birth,
+            user.id
+        ];
+
+        const result = await pool.query(query,values);
+        const updatedUser = result.rows[0];
+
+        if(!updatedUser){
+            throw new ApiError(
+                404,
+                "User not found or not updated"
+            );
+        }
+
+        const myProfile = formatUserProfile(updatedUser);
+        const cacheKey = `profile:user:${user.id}`;
+        
+        try{
+            await deleteCache(cacheKey);
+            await setCache(cacheKey,myProfile,600);
+        }catch(err){
+            console.error("Redis Deletion failed:", err.message);
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    myProfile,
+                    "User data updated successfully"
+                )
+            );
+            
+    }catch(err){
+
         throw new ApiError(
-            404, 
-            "User not found"
+            err.statusCode || 500,
+            err.message || "Failed to update user data"
+        );
+    }
+});
+
+const updateProfilePicture = asyncHandler(async (req, res) => {
+    const user = req.user;
+
+    if(!req.file?.path){
+        throw new ApiError(
+            400,
+            "Profile picture file is required"
         );
     }
 
-    return res.status(200).json(
-        new ApiResponse(
-            200,
-            user,
-            "User profile fetched successfully"
+    const localPath = req?.file?.path || "";
+
+    const uploaded = localPath
+        ? await uploadOnCloudinary(localPath)
+        : null;
+
+    if(!uploaded){
+        throw new ApiError(
+            500,
+            "Failed to upload profile picture"
+        );
+    }
+
+    let query = `
+        SELECT profile_picture_public_id
+        FROM users
+        WHERE id = $1;
+    `;
+    let result = await pool.query(query,[user.id]);
+
+    if(result.rowCount === 0){
+        throw new ApiError(
+            404,
+            "Invalid credentials"
         )
-    );
+    }
+    
+    query = `
+        UPDATE users
+        SET profile_picture_public_id = $1,
+            profile_picture_url = $2
+            updated_at = NOW()
+        WHERE id = $3
+        RETURNING ${USER_PROFILE_FIELDS};
+    `;
+
+    let values = [
+        uploaded.public_id,
+        uploaded.secure_url,
+        user.id
+    ];
+
+    const newres  = await pool.query(query,values);
+
+    const oldPublicId = result.rows[0].profile_picture_public_id;
+
+    const cacheKey = `profile:user:${user.id}`;
+    // 4️⃣ Delete old image (async)
+    if(oldPublicId){
+        try{
+            await deleteCache(cacheKey);
+            await deleteFromCloudinaryQueue.add(
+                "delete-from-cloudinary",
+                {
+                    public_id: oldPublicId,
+                    resourceType: "image"
+                },
+                {
+                    jobId: `delete:image:${oldPublicId}`
+                }
+            );
+        }catch(err){
+            console.error("Queue error:", err.message);
+        }
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {publicUrl: uploaded.secure_url},
+                "Profile picture updated successfully"
+            )
+        );
 });
-
-
-const updateUserProfile = asyncHandler(async (req, res) => {});
-const updateProfilePicture = asyncHandler(async (req, res) => {});
-const updateCurrentLocation = asyncHandler(async, (req,res) => { });
 
 
 export{
     getMyProfile,
     updateUserProfile,
     updateProfilePicture,
-    updateCurrentLocation,
 }

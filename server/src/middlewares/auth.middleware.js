@@ -4,7 +4,6 @@ import ApiError from '#utils/apiError';
 import asyncHandler from '#utils/asyncHandler';
 
 
-
 const verifyJWT = asyncHandler(async (req, _, next) => {
     // 1. Extract token safely
     const authHeader = req.header("Authorization");
@@ -43,7 +42,8 @@ const verifyJWT = asyncHandler(async (req, _, next) => {
             - 'password'
             - 'refresh_token' AS user
         WHERE id = $1
-            AND is_deleted = false
+            AND deleted_at IS NULL
+            AND deactivated_at IS NULL
             AND status = 'active';
     `;
 

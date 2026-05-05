@@ -1,37 +1,41 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from "bcrypt";
 import pool from '#config/db';
-
-import ApiError from '#utils/apiError';
-import ApiResponse from '#utils/apiResponse';
-import asyncHandler from '#utils/asyncHandler';
-
-import hashPassword from '#util/password';
-
 import redisConnection from '#config/redis';
+
+import ApiError from '#shared/utils/apiError';
+import ApiResponse from '#shared/utils/apiResponse';
+import asyncHandler from '#shared/utils/asyncHandler';
+import hashPassword from '#shared/util/password';
+import removeLocalFile from '#shared/utils/file';
+
+import {
+    formatOwnUser,
+} from '#shared/utils/user.utils';
+
+import {
+    generateAccessToken,
+    generateRefreshToken
+} from '#shared/utils/tokens.util';
+
+import {
+    hasEmpty,
+    isValidUUID
+} from '#shared/utils/validation.utils';
+
+import { 
+    uploadOnCloudinary,
+    deleteFromCloudinary,
+} from '#shared/services/storage.service';
+
+import client from '#lib/twilioClient';
 
 import { 
     getCache,
     setCache,
     deleteCache,
     deleteMultipleCache
-} from '#utils/cache.util';
-
-
-import { 
-    uploadOnCloudinary,
-    deleteFromCloudinary,
-    removeLocalFile 
-} from '#utils/cloudinary.util';
-
-import {
-    formatOwnUser,
-} from '#utils/user.utils';
-
-import {
-    generateAccessToken,
-    generateRefreshToken
-} from '#utils/tokens.util';
+} from '#lib/cache';
 
 import { 
     otpQueue,
@@ -113,7 +117,7 @@ const registerUser = asyncHandler(async (req, res) => {
                 username, email, first_name, last_name, 
                 primary_contact_number, country_code, 
                 gender, bio, date_of_birth, 
-                profile_picture_publicid, 
+                profile_picture_public_id, 
                 profile_picture_url, 
                 password
             )

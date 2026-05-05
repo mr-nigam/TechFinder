@@ -29,15 +29,16 @@ app.use(express.static("public"));
 app.use(cookieParser());
 
 
+app.use((req, res, next) => {
+    console.log("METHOD:", req.method);
+    console.log("URL:", req.url);
+    next();
+});
 
-// import routes
+import authRouter from '#modules/auth/auth.routes';
 
 
-
-
-// use routes
-
-
+app.use("/api/v1/auth", authRouter);
 
 
 app.use((req,res,next)=>{

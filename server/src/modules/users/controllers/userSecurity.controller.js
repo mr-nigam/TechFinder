@@ -1,10 +1,17 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import pool from '#config/db';
-import asyncHandler from '#utils/asyncHandler';
-import ApiError from '#utils/apiError';
-import ApiResponse from '#utils/apiResponse';
 
+import ApiError from '#shared/utils/apiError';
+import ApiResponse from '#shared/utils/apiResponse';
+import asyncHandler from '#shared/utils/asyncHandler'
+
+import { 
+    getCache,
+    setCache,
+    deleteCache,
+    deleteMultipleCache
+} from '#lib/cache';
 
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
@@ -104,12 +111,13 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 
 const verifyEmail = asyncHandler(async (req, res) => {});
 const changeEmail = asyncHandler(async (req, res) => {});
+const sendEmailVerification = asyncHandler(async (req, res) => {});
 const resendEmailVerification = asyncHandler(async (req, res) => {});
-
 
 export {
     changeCurrentPassword,
-    verifyEmail,
     changeEmail,
+    verifyEmail,
+    sendEmailVerification,
     resendEmailVerification,
 };

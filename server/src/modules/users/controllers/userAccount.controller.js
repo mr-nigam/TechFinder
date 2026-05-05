@@ -1,16 +1,17 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import pool from '#config/db';
-import asyncHandler from '#utils/asyncHandler';
-import ApiError from '#utils/apiError';
-import ApiResponse from '#utils/apiResponse';
+
+import ApiError from '#shared/utils/apiError';
+import ApiResponse from '#shared/utils/apiResponse';
+import asyncHandler from '#shared/utils/asyncHandler'
 
 import accountDeletionQueue from '../jobs/userAccount.queue.js';
 import emailQueue from '../jobs/email.queue.js';
 
-import {
+import{
     deleteMultipleCache
-} from '#utils/cache.util';
+} from '#lib/cache';
 
 
 const deactivateAccount = asyncHandler(async (req, res) => {
@@ -27,7 +28,7 @@ const deactivateAccount = asyncHandler(async (req, res) => {
     const cacheKeys = [
         `auth:user:${user.username}`,
         `auth:user:${user.email}`,
-        `auth:user:${user.primary_contact_number}`
+        `auth:user:${user.primary_phone_number}`
     ].filter(Boolean);
 
 
@@ -124,14 +125,14 @@ const reactivateAccount = asyncHandler(async (req, res) => {
         const{
             email = "",
             username = "",
-            primary_contact_number = "",
+            primary_phone_number = "",
             password = ""
         } = req.body;
 
         const normalized = {
             email: email?.trim().toLowerCase().replace(/"/g, ""),
             username: username?.trim().toLowerCase(),
-            primary_contact_number: primary_contact_number?.trim(),
+            primary_phone_number: primary_phone_number?.trim(),
             password: password?.trim()
         };
         
@@ -154,9 +155,9 @@ const reactivateAccount = asyncHandler(async (req, res) => {
             column = "username";
             value = normalized.username;
         }
-        else if(normalized.primary_contact_number){
-            column = "primary_contact_number";
-            value = normalized.primary_contact_number;
+        else if(normalized.primary_phone_number){
+            column = "primary_phone_number";
+            value = normalized.primary_phone_number;
         }
         else{
             throw new ApiError(
@@ -260,7 +261,7 @@ const deleteAccount = asyncHandler(async (req, res) => {
     const cacheKeys = [
         `auth:user:${user.username}`,
         `auth:user:${user.email}`,
-        `auth:user:${user.primary_contact_number}`
+        `auth:user:${user.primary_phone_number}`
     ].filter(Boolean);
 
     let query = `

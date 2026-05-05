@@ -25,10 +25,11 @@
     "start": "node src/server.js"
   },
   "imports": {
-    "#utils/*": "./src/utils/*.js",
+    "#shared/*": "./src/shared/*.js",
     "#config/*": "./src/config/*.js",
     "#modules/*": "./src/modules/*.js",
-    "#middlewares/*": "./src/middlewares/*.js"
+    "#middlewares/*": "./src/middlewares/*.js",
+    "#lib/*": "./src/lib/*.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -45,7 +46,8 @@
     "multer": "^2.1.1",
     "node": "^25.9.0",
     "p-limit": "^7.3.0",
-    "pg": "^8.20.0"
+    "pg": "^8.20.0",
+    "twilio": "^6.0.0"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
