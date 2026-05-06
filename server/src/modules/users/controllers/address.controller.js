@@ -567,7 +567,7 @@ const updateAddress = asyncHandler(async (req, res) => {
 
 const updateAddressLocation = asyncHandler(async (req, res) => { });
 
-const addAddressesAssets = asyncHandler(async (req, res) => { });
+const addAddressAssets = asyncHandler(async (req, res) => { });
 
 const updateAddressAssets = asyncHandler(async (req, res) => { });
 
@@ -580,6 +580,6 @@ export {
     changeDefaultAddress,
     updateAddress,
     updateAddressLocation,
-    addAddressesAssets,
+    addAddressAssets,
     updateAddressAssets
 }

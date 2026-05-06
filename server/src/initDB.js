@@ -2,7 +2,7 @@ import { connectDB } from '#config/db';
 import createUsersTable from '#modules/users/models/user.model';
 import createAddressTable from '#modules/users/models/address.model';
 import createAddressesAssetsTable from '#modules/users/models/addressAsset.model';
-import createPhoneNumbersTable from '#modules/users/models/phoneNumbers.model';
+import createPhonesTable from '#modules/users/models/phone.model';
 
 
 const initDB = async () => {

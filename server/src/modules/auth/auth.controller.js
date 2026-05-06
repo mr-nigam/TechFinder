@@ -8,6 +8,7 @@ import ApiResponse from '#shared/utils/apiResponse';
 import asyncHandler from '#shared/utils/asyncHandler';
 import hashPassword from '#shared/util/password';
 import removeLocalFile from '#shared/utils/file';
+import isValidPhone from '#shared/utils/phone.util';
 
 import {
     formatOwnUser,
@@ -42,7 +43,6 @@ import {
     emailQueue 
 } from './auth.queue.js';
 
-
 const registerUser = asyncHandler(async (req, res) => {
     let profilePictureLocalPath = "";
 
@@ -55,8 +55,7 @@ const registerUser = asyncHandler(async (req, res) => {
             bio = "",
             gender = "",
             password = "",
-            primary_contact_number = "",
-            country_code = "",
+            phone = "",
             date_of_birth = null
         } = req.body;
         
@@ -68,8 +67,7 @@ const registerUser = asyncHandler(async (req, res) => {
             bio: bio?.trim() || "User",
             gender: gender?.trim() || "not shared",
             password: password.trim(),
-            primary_contact_number: primary_contact_number.trim(),
-            country_code: country_code.trim()
+            phone: phone.trim(),
         };
 
         const requiredFields = [
@@ -78,8 +76,7 @@ const registerUser = asyncHandler(async (req, res) => {
             normalized.first_name,
             normalized.last_name,
             normalized.password,
-            normalized.primary_contact_number,
-            normalized.country_code
+            normalized.phone,
         ];
 
         if(hasEmpty(requiredFields)){
@@ -89,13 +86,7 @@ const registerUser = asyncHandler(async (req, res) => {
             );
         }
 
-        const isValid = /^[0-9]+$/.test(normalized.primary_contact_number);
-        if(!isValid){
-            throw new ApiError(
-                400,
-                "Contact number must contain digits only"
-            );
-        }
+        isValidPhone({ phone });
 
         // check email format
         profilePictureLocalPath = req?.file?.path || "";
@@ -115,13 +106,12 @@ const registerUser = asyncHandler(async (req, res) => {
         const query = `
             INSERT INTO users (
                 username, email, first_name, last_name, 
-                primary_contact_number, country_code, 
-                gender, bio, date_of_birth, 
+                phone, gender, bio, date_of_birth, 
                 profile_picture_public_id, 
                 profile_picture_url, 
                 password
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING *;
         `;
 
@@ -130,8 +120,7 @@ const registerUser = asyncHandler(async (req, res) => {
             normalized.email,
             normalized.first_name, 
             normalized.last_name,
-            normalized.primary_contact_number,
-            normalized.country_code,
+            normalized.phone,
             normalized.gender,
             normalized.bio,
             date_of_birth,
@@ -152,13 +141,12 @@ const registerUser = asyncHandler(async (req, res) => {
         }
 
         try{
-            await emailQueue.add("sendWelcomeEmail", {
-                userId: user.id,
-                email: user.email,
-                username: user.username,
-                first_name: user.first_name,
-                last_name: user.last_name
-            });
+            await emailQueue.add("sendWelcomeEmail", 
+                { userId: user.id},
+                {
+                    jobId: `register:${user.id}`,
+                }
+            );
         }catch(err){
             console.error("Queue error:", err.message);
         }
@@ -193,7 +181,7 @@ const registerUser = asyncHandler(async (req, res) => {
                 );
             }
 
-            if (err.constraint?.includes("primary_contact_number")) {
+            if (err.constraint?.includes("phone")) {
                 throw new ApiError(
                     409,
                     "Contact number already in use"
@@ -216,10 +204,10 @@ const registerUser = asyncHandler(async (req, res) => {
 const logInUser = asyncHandler (async (req, res) => {
     const email = req.body.email?.trim().replace(/"/g, "") || "";
     const username = req.body.username?.trim() || "";
-    const primary_contact_number = req.body.primary_contact_number?.trim()|| "";
+    const phone = req.body.phone?.trim()|| "";
     const password = req.body.password?.trim() || "";
 
-    if(!email && !username && !primary_contact_number){
+    if(!email && !username && !phone){
         throw new ApiError(
             404,
             "Please provide email, username, contact number"
@@ -233,7 +221,7 @@ const logInUser = asyncHandler (async (req, res) => {
     }
 
     
-    const filter = email || username || primary_contact_number; 
+    const filter = email || username || phone; 
 
      
     let cacheKey = `auth:user:${filter}`;
@@ -248,7 +236,7 @@ const logInUser = asyncHandler (async (req, res) => {
             FROM users
             WHERE (email = $1
                     OR username = $1
-                    OR primary_contact_number = $1
+                    OR phone = $1
                 )
                 AND deleted_at IS NULL
                 AND deactivated_at IS NULL
@@ -280,8 +268,7 @@ const logInUser = asyncHandler (async (req, res) => {
         
     let query = `
         UPDATE users
-        SET refresh_token = $1,
-            updated_at = NOW()
+        SET refresh_token = $1
         WHERE id = $2
         RETURNING *;
     `;
@@ -310,8 +297,7 @@ const logOutUser = asyncHandler (async (req, res) => {
 
     const query = `
         UPDATE users
-        SET refresh_token = NULL,
-            updated_at = NOW()
+        SET refresh_token = NULL
         WHERE id = $1;
     `;
 
@@ -320,7 +306,7 @@ const logOutUser = asyncHandler (async (req, res) => {
     const cacheKeys = [
         `auth:user:${user.username}`,
         `auth:user:${user.email}`,
-        `auth:user:${user.primary_contact_number}`
+        `auth:user:${user.phone}`
     ].filter(Boolean);
 
     await deleteMultipleCache(cacheKeys); 
@@ -384,8 +370,7 @@ const refreshAccessToken = asyncHandler (async (req, res) => {
 
         query = `
             UPDATE users
-            SET refresh_token = $1,
-                updated_at = NOW()
+            SET refresh_token = $1
             WHERE id = $2;
         `;
 

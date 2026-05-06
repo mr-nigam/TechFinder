@@ -9,7 +9,7 @@ import {
     changeDefaultAddress,
     updateAddress,
     updateAddressLocation,
-    addAddressesAssets,
+    addAddressAssets,
     updateAddressAssets
 } from '../controllers/address.controller.js';
 
@@ -32,7 +32,7 @@ router.patch("/:addressId/default", changeDefaultAddress);
 
 router.patch("/:addressId/location", updateAddressLocation);
 
-router.post("/:addressId/assets", addAddressesAssets);
+router.post("/:addressId/assets", addAddressAssets);
 
 router.patch("/:addressId/assets", updateAddressAssets);
 

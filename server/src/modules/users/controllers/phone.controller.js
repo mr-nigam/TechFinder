@@ -2,22 +2,18 @@ import pool from '#config/db';
 import ApiError from '#shared/utils/apiError';
 import ApiResponse from '#shared/utils/apiResponse';
 import asyncHandler from '#shared/utils/asyncHandler';
-
+import isValidPhone from '#shared/utils/phone.util';
 
 import {
     hasEmpty,
     isValidUUID
 } from '#shared/utils/validation.utils';
 
-import {
-    isValidPhoneNumber,
-    formatPhoneNumbers
-} from '#shared/utils/phoneNumbers.utils';
 
 import {
-    phoneNumberQueue,
+    phoneQueue,
     emailQueue
-} from '../jobs/phoneNumber.queue.js';
+} from '../jobs/phone.queue.js';
 
 
 const addPhoneNumber = asyncHandler(async (req, res) => {
@@ -115,7 +111,7 @@ const addPhoneNumber = asyncHandler(async (req, res) => {
                 "phone-number-added", 
                 { 
                     userId: user.id,
-                    phoneNumberId: ph.id
+                    phoneId: ph.id
                 },
                 {
                     jobId: `email:phone-number-added:${ph.id}`
@@ -189,10 +185,10 @@ const getMyPhoneNumbers = asyncHandler(async (req, res) => {
 });
 
 const deletePhoneNumber = asyncHandler(async (req, res) => {
-    const phoneNumberId = req.params.phoneNumberId;
+    const phoneId = req.params.phoneId;
     const user = req.user;
 
-    if(!isValidUUID(phoneNumberId)){
+    if(!isValidUUID(phoneId)){
         throw new ApiError(
             404,
             "Invalid phone number id"
@@ -213,7 +209,7 @@ const deletePhoneNumber = asyncHandler(async (req, res) => {
 
     const result = await pool.query(
         query,
-        [phoneNumberId, user.id]
+        [phoneId, user.id]
     );
 
     const ph = result.rows[0];
@@ -225,10 +221,10 @@ const deletePhoneNumber = asyncHandler(async (req, res) => {
     }
 
     try{
-        await phoneNumberQueue.add(
+        await phoneQueue.add(
             "delete-phone-number",
             { 
-                phoneNumberId: ph.id,
+                phoneId: ph.id,
             },
             {
                 jobId: `delete:phone-number:${ph.id}`,
@@ -244,7 +240,7 @@ const deletePhoneNumber = asyncHandler(async (req, res) => {
             "deleted-phone-number", 
             { 
                 userId: user.id,
-                phoneNumberId: ph.id
+                phoneId: ph.id
             },
             { 
                 jobId: `email:deleted:phone-number:${ph.id}`
@@ -267,10 +263,10 @@ const deletePhoneNumber = asyncHandler(async (req, res) => {
 });
 
 const setDefaultPhoneNumber = asyncHandler(async (req, res) => {
-    const phoneNumberId = req.params.phoneNumberId;
+    const phoneId = req.params.phoneId;
     const user = req.user;
 
-    if(!isValidUUID(phoneNumberId)){
+    if(!isValidUUID(phoneId)){
         throw new ApiError(
             404,
             "INvalid phone number id"
@@ -295,7 +291,7 @@ const setDefaultPhoneNumber = asyncHandler(async (req, res) => {
 
         let result = await pool.query(
             query,
-            [phoneNumberId, user.id]
+            [phoneId, user.id]
         );
 
         if(result.rowCount === 0){
@@ -341,7 +337,7 @@ const setDefaultPhoneNumber = asyncHandler(async (req, res) => {
                 "set-default-phone-number", 
                 { 
                     userId: user.id,
-                    phoneNumberId: newDefaultNumber.id
+                    phoneId: newDefaultNumber.id
                 },
                 { 
                     jobId: `email:set-default-phone-number:${ph.id}`

@@ -15,20 +15,22 @@ const createTechniciansTable = async () => {
         user_id UUID UNIQUE NOT NULL
           REFERENCES users(id) ON DELETE CASCADE,
 
-        address_id UUID NOT NULL
-          REFERENCES addresses(id),
-
-        contact_id UUID NOT NULL
-          REFERENCES contacts(id),
-
-        professional_title VARCHAR(100) NOT NULL,
+        specialization VARCHAR(100) NOT NULL,
         about TEXT,
 
         languages_spoken TEXT[] DEFAULT '{}',
 
-        is_verified BOOLEAN DEFAULT FALSE,
+        verification_status VARCHAR(20)
+        CHECK (
+          verification_status IN (
+            'pending',
+            'approved',
+            'rejected'
+          )
+        ) DEFAULT 'pending',
+
         verified_at TIMESTAMPTZ,
-        verified_by UUID
+        verified_by UUID,
 
         status VARCHAR(20) NOT NULL
           CHECK (
@@ -36,7 +38,7 @@ const createTechniciansTable = async () => {
               'online',
               'offline',
               'on_job',
-              'break'
+              'break',
               'suspended'
             )
           )
@@ -50,7 +52,6 @@ const createTechniciansTable = async () => {
         current_location GEOGRAPHY(POINT, 4326),
         current_location_captured_at TIMESTAMPTZ,
         current_location_accuracy_meters NUMERIC(8,2),
-
         location_source VARCHAR(20) DEFAULT 'gps'
           CHECK (
             location_source IN (
@@ -88,7 +89,7 @@ const createTechniciansTable = async () => {
         total_jobs_completed DESC
       )
       WHERE is_verified = TRUE
-        AND status = 'available'
+        AND status = 'online'
         AND deleted_at IS NULL
         AND deactivated_at IS NULL;
     `);

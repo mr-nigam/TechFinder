@@ -6,7 +6,7 @@ import ApiError from '#shared/utils/apiError';
 import ApiResponse from '#shared/utils/apiResponse';
 import asyncHandler from '#shared/utils/asyncHandler'
 
-import accountDeletionQueue from '../jobs/userAccount.queue.js';
+import accountQueue from '../jobs/account.queue.js';
 import emailQueue from '../jobs/email.queue.js';
 
 import{
@@ -26,9 +26,10 @@ const deactivateAccount = asyncHandler(async (req, res) => {
     }
 
     const cacheKeys = [
+        `auth:user:${user.user.id}`,
         `auth:user:${user.username}`,
         `auth:user:${user.email}`,
-        `auth:user:${user.primary_phone_number}`
+        `auth:user:${user.phone}`
     ].filter(Boolean);
 
 
@@ -36,9 +37,7 @@ const deactivateAccount = asyncHandler(async (req, res) => {
         SELECT 
             password
         FROM users
-        WHERE id = $1
-            AND deactivated_at IS NULL
-            AND deleted_at IS NULL;
+        WHERE id = $1;
     `;
 
     let result = await pool.query(query, [user.id]);
@@ -64,7 +63,6 @@ const deactivateAccount = asyncHandler(async (req, res) => {
         UPDATE users
         set 
             deactivated_at = NOW(),
-            updated_at = NOW(),
             refresh_token = NULL
         WHERE id = $1;
     `;
@@ -72,9 +70,15 @@ const deactivateAccount = asyncHandler(async (req, res) => {
     result = await pool.query(query,[user.id]);
 
     try{
-        await accountDeletionQueue.add(
+        await accountQueue.add(
             "deactivate-account",
-            { userId: user.id },
+            { 
+                userId: user.id,
+                email: user.email,
+                username: user.username,
+                first_name: user.first_name,
+                last_name: user.last_name, 
+            },
             {   
                 jobId: `deActivate:${user.id}`,
                 delay: 90 * 24 * 60 * 60 * 1000 // 90 days in milliseconds
@@ -88,13 +92,7 @@ const deactivateAccount = asyncHandler(async (req, res) => {
     try{
         await emailQueue.add(
             "request-deactivate-account",
-            {
-                userId: user.id,
-                email: user.email,
-                username: user.username,
-                first_name: user.first_name,
-                last_name: user.last_name,
-            },
+            { userId: user.id},
             {
                 jobId: `user:-deactivated:${user.id}`
             }
@@ -103,6 +101,24 @@ const deactivateAccount = asyncHandler(async (req, res) => {
     }catch(err){
         console.error("Queue error:", err.message);
     }
+
+    res.clearCookie(
+        "accessToken",
+        {
+            httpOnly: true,
+            secure: true,
+            sameSite: "strict",
+        }
+    );
+    
+    res.clearCookie(
+        "refreshToken",
+        {
+            httpOnly: true,
+            secure: true,
+            sameSite: "strict",
+        }
+    );
 
     await deleteMultipleCache(cacheKeys);
 
@@ -125,14 +141,14 @@ const reactivateAccount = asyncHandler(async (req, res) => {
         const{
             email = "",
             username = "",
-            primary_phone_number = "",
+            phone = "",
             password = ""
         } = req.body;
 
         const normalized = {
             email: email?.trim().toLowerCase().replace(/"/g, ""),
             username: username?.trim().toLowerCase(),
-            primary_phone_number: primary_phone_number?.trim(),
+            phone: phone?.trim(),
             password: password?.trim()
         };
         
@@ -155,9 +171,9 @@ const reactivateAccount = asyncHandler(async (req, res) => {
             column = "username";
             value = normalized.username;
         }
-        else if(normalized.primary_phone_number){
-            column = "primary_phone_number";
-            value = normalized.primary_phone_number;
+        else if(normalized.phone){
+            column = "phone";
+            value = normalized.phone;
         }
         else{
             throw new ApiError(
@@ -215,11 +231,10 @@ const reactivateAccount = asyncHandler(async (req, res) => {
 
         await client.query(query,[user.id]);
 
-        let job = await accountDeletionQueue.getJob(`delete:${user.id}`);
-        
+        let job = await accountQueue.getJob(`delete:${user.id}`);
         if(job) await job.remove();
 
-        job = await accountDeletionQueue.getJob(`deActivate:${user.id}`);
+        job = await accountQueue.getJob(`deActivate:${user.id}`);
         if(job) await job.remove();
         
         await client.query("COMMIT");
@@ -259,18 +274,17 @@ const deleteAccount = asyncHandler(async (req, res) => {
     }
 
     const cacheKeys = [
+        `auth:user:${user.user.id}`,
         `auth:user:${user.username}`,
         `auth:user:${user.email}`,
-        `auth:user:${user.primary_phone_number}`
+        `auth:user:${user.phone}`
     ].filter(Boolean);
 
     let query = `
         SELECT 
-        password
+            password
         FROM users
-        WHERE id = $1
-            AND deactivated_at IS NULL
-            AND deleted_at IS NULL;
+        WHERE id = $1;
     `;
 
     let result = await pool.query(query, [user.id]);
@@ -305,7 +319,7 @@ const deleteAccount = asyncHandler(async (req, res) => {
     await pool.query(query,[user.id]);
 
     try{
-        await accountDeletionQueue.add(
+        await accountQueue.add(
             "delete-account",
             { userId: user.id },
             { 
@@ -337,6 +351,24 @@ const deleteAccount = asyncHandler(async (req, res) => {
     }catch(err){
         console.error("Queue error:", err.message);
     }
+
+    res.clearCookie(
+        "accessToken",
+        {
+            httpOnly: true,
+            secure: true,
+            sameSite: "strict",
+        }
+    );
+    
+    res.clearCookie(
+        "refreshToken",
+        {
+            httpOnly: true,
+            secure: true,
+            sameSite: "strict",
+        }
+    );
 
     await deleteMultipleCache(cacheKeys);
 

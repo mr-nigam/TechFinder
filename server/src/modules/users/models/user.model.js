@@ -28,21 +28,21 @@ const createUsersTable = async() => {
                 email VARCHAR(100) UNIQUE NOT NULL
                     CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
 
-                primary_phone_number TEXT UNIQUE NOT NULL
+                -- E.164 Format
+                phone VARCHAR(15) NOT NULL
                     CHECK (
-                        primary_phone_number ~ '^\+?[0-9]+$'
-                        AND length(primary_phone_number) BETWEEN 6 AND 15    
+                        phone ~ '^\\+[1-9][0-9]{6,14}$'
                     ),
 
-                country_code VARCHAR(5) NOT NULL,
-                is_primary_phone_number_verified BOOLEAN DEFAULT FALSE,
+                is_phone_verified BOOLEAN DEFAULT FALSE,
+                is_email_verified BOOLEAN DEFAULT FALSE,
 
                 gender VARCHAR(20) DEFAULT 'not shared'
                     CHECK (gender IN (
                         'male',
                         'female',
                         'other',
-                        'not shared'
+                        'not_shared'
                     )),
 
                 date_of_birth DATE
@@ -58,10 +58,6 @@ const createUsersTable = async() => {
                 password TEXT NOT NULL,
                 password_changed_at TIMESTAMPTZ,
                 refresh_token TEXT,
-
-                is_email_verified BOOLEAN DEFAULT FALSE,
-                email_verified_at TIMESTAMPTZ,
-                last_seen TIMESTAMPTZ,
 
                 role VARCHAR(15) NOT NULL 
                     CHECK(role IN('user','technician','admin')) 

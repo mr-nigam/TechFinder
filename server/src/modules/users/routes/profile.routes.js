@@ -6,7 +6,7 @@ import {
     getMyProfile,
     updateUserProfile,
     updateProfilePicture
-} from '../controllers/userProfile.controller.js';
+} from '../controllers/profile.controller.js';
 
 
 const router = Router();

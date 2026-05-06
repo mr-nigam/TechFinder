@@ -5,7 +5,7 @@ import {
     deactivateAccount,
     reactivateAccount,
     deleteAccount
-} from '../controllers/userAccount.controller.js';
+} from '../controllers/account.controller.js';
 
 
 const router = Router();

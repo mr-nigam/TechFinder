@@ -36,18 +36,19 @@ const verifyJWT = asyncHandler(async (req, _, next) => {
         );
     }
 
-    const query = `
+    let query = `
         SELECT 
             to_jsonb(users)
             - 'password'
             - 'refresh_token' AS user
         WHERE id = $1
+        FROM users
             AND deleted_at IS NULL
             AND deactivated_at IS NULL
             AND status = 'active';
     `;
 
-    const result = await pool.query(query,[decodedToken?.id]);
+    let result = await pool.query(query,[decodedToken?.id]);
     const user =  result.rows[0];
     
     if(!user){
@@ -78,8 +79,28 @@ const verifyJWT = asyncHandler(async (req, _, next) => {
     }
 
     req.user = user;
-    next();
-    
+
+    query = `
+        SELECT
+            id,
+            specialization,
+            status,
+            verification_status,
+            last_seen_at
+        FROM technicians
+        WHERE user_id = $1
+            AND deleted_at IS NULL
+            AND deactivated_at IS NULL
+        LIMIT 1;
+    `;
+
+    const techie = await pool.query(query, [user.id]);
+
+    if(techie.rowCount >0) {
+        req.technician = techie.rows[0];
+    }
+
+    next(); 
 });
 
 
