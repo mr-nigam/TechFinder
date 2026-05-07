@@ -4,11 +4,11 @@ import verifyJWT from '#middlewares/auth.middleware';
 import {
     changePassword,
     changeEmail,
-    verifyEmail,
     sendEmailOtp,
-    changePrimaryPhone,
-    verifyPrimaryPhone,
-    sendPrimaryPhoneOtp
+    verifyEmail,
+    changePhone,
+    sendPhoneOtp,
+    verifyPhone
 } from '../controllers/security.controller.js';
 
 
@@ -22,15 +22,15 @@ router.patch("/password", changePassword);
 
 router.patch("/email",changeEmail);
 
-router.post("/email/verify", verifyEmail);
+router.post("/email/send-otp",sendEmailOtp);
 
-router.post("/email/otp",sendEmailOtp);
+router.post("/email/verify-otp", verifyEmail);
 
-router.patch("/primary-phone", changePrimaryPhone);
+router.patch("/phone", changePhone);
 
-router.post( "/primary-phone/verify",verifyPrimaryPhone);
+router.post("/phone/send-otp",sendPhoneOtp);
 
-router.post("/primary-phone/otp",sendPrimaryPhoneOtp);
+router.post( "/phone/verify-otp",verifyPhone);
 
 
 export default router;

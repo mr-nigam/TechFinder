@@ -9,7 +9,7 @@ const hasEmpty = (arr = []) => {
 };
 
 // read about this 
-const isValidUUID = (value = "") => {
+const isValidUUID = (value) => {
     if(typeof value !== "string"){
         return false;
     }
@@ -22,8 +22,44 @@ const isValidUUID = (value = "") => {
     );
 };
 
+const isValidPhone = (phone) => {
+    const phone = String(phone).trim();
+
+    // Phone number digits only
+    const phoneRegex = /^\+[1-9][0-9]{6,14}$/;
+
+    if(!phoneRegex.test(phone)){
+        throw new ApiError(
+            400,
+            "Phone number must be in valid international format (e.g. +919876543210)"
+        );
+    }
+
+    return {
+        valid: true,
+        message: "Valid phone number"
+    };
+};
+
+const isValidEmail = (email) => {
+    const regex =
+        /^[A-Za-z0-9]+([._%+-]?[A-Za-z0-9]+)*@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
+
+    if(!regex.test(email)){
+        throw new ApiError(
+            400,
+            "email must be in valid format"
+        );
+    }
+    return {
+        valid: true,
+        message: "Valid email"
+    };
+}
 
 export {
     hasEmpty,
-    isValidUUID
+    isValidUUID,
+    isValidPhone,
+    isValidEmail
 };

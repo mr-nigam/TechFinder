@@ -30,7 +30,7 @@ const createUsersTable = async() => {
                     CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
 
                 -- E.164 Format
-                phone VARCHAR(15) NOT NULL
+                phone VARCHAR(15) UNIQUE NOT NULL
                     CHECK (
                         phone ~ '^\\+[1-9][0-9]{6,14}$'
                     ),

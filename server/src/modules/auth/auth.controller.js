@@ -1,14 +1,13 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from "bcrypt";
 import pool from '#config/db';
-import redisConnection from '#config/redis';
 
 import ApiError from '#shared/utils/apiError';
 import ApiResponse from '#shared/utils/apiResponse';
 import asyncHandler from '#shared/utils/asyncHandler';
 import hashPassword from '#shared/util/password';
 import removeLocalFile from '#shared/utils/file';
-import isValidPhone from '#shared/utils/phone.util';
+import cloudinaryQueue from '#utils/cloudinary.jobs';
 
 import {
     formatOwnUser,
@@ -26,7 +25,9 @@ import {
 
 import {
     hasEmpty,
-    isValidUUID
+    isValidUUID,
+    isValidPhone,
+    isValidEmail
 } from '#shared/utils/validation.utils';
 
 import { 
@@ -90,9 +91,9 @@ const register = asyncHandler(async (req, res) => {
             );
         }
 
-        isValidPhone(phone);
+        isValidPhone(normalized.phone);
+        isValidEmail(normalized.email);
 
-        // check email format
         profilePictureLocalPath = req?.file?.path || "";
         const profilePicture = profilePictureLocalPath
             ? await uploadOnCloudinary(profilePictureLocalPath)

@@ -13,9 +13,18 @@ const getCache = async(key) => {
 
 const setCache = async(key, value, ttl = 600) => {
     try{
-        await redisConnection.set(key, JSON.stringify(value), "EX", ttl);
+        await redisConnection.set(
+            key,
+            JSON.stringify(value),
+            "EX",
+            ttl
+        );
+
+        return true;
+
     }catch(err){
         console.error("Redis SET failed:", err.message);
+        return false;
     }
 };
 
@@ -44,10 +53,20 @@ const deleteMultipleCache = async(keys) => {
     }
 };
 
+const invalidateCaches = async (userId, technicianId) => {
+    const cacheKeys = [
+        `profile:user:${userId}`,
+        `profile:technician:${technicianId}`,
+        `dashboard:technician:${technicianId}`,
+    ].filter(Boolean);
+
+    await deleteMultipleCache(cacheKeys);
+};
 
 export {
     getCache,
     setCache,
     deleteCache,
-    deleteMultipleCache
+    deleteMultipleCache,
+    invalidateCaches
 }

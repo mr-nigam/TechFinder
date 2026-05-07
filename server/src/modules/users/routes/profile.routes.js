@@ -3,8 +3,8 @@ import verifyJWT from '#middlewares/auth.middleware';
 import upload from '#middlewares/multer.middleware';
 
 import {
-    getMyProfile,
-    updateUserProfile,
+    getProfile,
+    updateProfile,
     updateProfilePicture
 } from '../controllers/profile.controller.js';
 
@@ -16,8 +16,8 @@ router.use(verifyJWT);
 
 
 router.route("/me")
-    .get(getMyProfile)
-    .patch(updateUserProfile);
+    .get(getProfile)
+    .patch(updateProfile);
 
 router.patch(
     "/me/profile-picture",

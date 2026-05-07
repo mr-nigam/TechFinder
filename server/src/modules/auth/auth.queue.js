@@ -2,19 +2,6 @@ import { Queue } from 'bullmq';
 import redisConnection from '#config/redis';
 
 
-const otpQueue = new Queue("otpQueue", {
-    connection: redisConnection,
-    defaultJobOptions: {
-        attempts: 2,
-        backoff: {
-            type: "fixed",
-            delay: 1000
-        },
-        removeOnComplete: 50,
-        removeOnFail: 100
-    }
-});
-
 const emailQueue = new Queue("emailQueue", {
     connection: redisConnection,
     defaultJobOptions: {
@@ -30,6 +17,5 @@ const emailQueue = new Queue("emailQueue", {
 
 
 export {
-    otpQueue,
     emailQueue
 };

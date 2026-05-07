@@ -2,13 +2,12 @@ import pool from '#config/db';
 import ApiError from '#shared/utils/apiError';
 import ApiResponse from '#shared/utils/apiResponse';
 import asyncHandler from '#shared/utils/asyncHandler';
-import isValidPhone from '#shared/utils/phone.util';
 
 import {
     hasEmpty,
-    isValidUUID
+    isValidUUID,
+    isValidPhone,
 } from '#shared/utils/validation.utils';
-
 
 import {
     phoneQueue,

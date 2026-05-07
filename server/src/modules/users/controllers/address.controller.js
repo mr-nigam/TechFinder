@@ -1,13 +1,10 @@
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
-import pool from '#config/db';
-import redisConnection from '#config/redis';
 
+import pool from '#config/db';
 import ApiError from '#shared/utils/apiError';
 import ApiResponse from '#shared/utils/apiResponse';
 import asyncHandler from '#shared/utils/asyncHandler';
-import hashPassword from '#shared/util/password';
 import removeLocalFile from '#shared/utils/file';
+import cloudinaryQueue from '#utils/cloudinary.jobs';
 
 import {
     hasEmpty,
@@ -19,13 +16,10 @@ import {
     deleteFromCloudinary,
 } from '#shared/services/storage.service';
 
-
 import {
     formatOwnAddress,
     formatAddressAssets
 } from '#shared/utils/address.utils';
-
-import client from '#lib/twilioClient';
 
 import { 
     getCache,
@@ -38,7 +32,6 @@ import {
     addressQueue,
     emailQueue
 } from '../jobs/address.queue.js';
-
 
 
 const addAddress = asyncHandler(async (req, res) => {

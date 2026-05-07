@@ -2,9 +2,9 @@ import pool from '#config/db';
 import asyncHandler from '#utils/asyncHandler';
 import ApiError from '#utils/apiError';
 import ApiResponse from '#utils/apiResponse';
-import redisConnection from '#config/redis';
+
 import formatMyProfile from '#utils/user.util';
-import cloudinaryDeleteQueue from '#utils/cloudinary.jobs';
+import cloudinaryQueue from '#utils/cloudinary.jobs';
 import removeLocalFile from '#shared/utils/file';
 
 import { 
@@ -224,7 +224,7 @@ const updateProfilePicture = asyncHandler(async (req, res) => {
     if(oldPublicId){
         try{
             await deleteCache(cacheKey);
-            await cloudinaryDeleteQueue.add(
+            await cloudinaryQueue.add(
                 "delete-from-cloudinary",
                 {
                     public_id: oldPublicId,
