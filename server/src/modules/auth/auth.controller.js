@@ -2,51 +2,32 @@ import jwt from 'jsonwebtoken';
 import bcrypt from "bcrypt";
 import pool from '#config/db';
 
-import ApiError from '#shared/utils/apiError';
-import ApiResponse from '#shared/utils/apiResponse';
-import asyncHandler from '#shared/utils/asyncHandler';
-import hashPassword from '#shared/util/password';
-import removeLocalFile from '#shared/utils/file';
-import cloudinaryQueue from '#utils/cloudinary.jobs';
-
 import {
+    ApiError,
+    ApiResponse,
+    asyncHandler,
+    hashPassword,
+    removeLocalFile,
     formatOwnUser,
-} from '#shared/utils/user.utils';
-
-import {
     generateAccessToken,
     generateRefreshToken,
-} from '#shared/utils/tokens.util';
-
-import {
     getAccessCookieOptions,
     getRefreshCookieOptions,
-} from '#shared/utils/cookie.util';
-
-import {
     hasEmpty,
     isValidUUID,
     isValidPhone,
-    isValidEmail
-} from '#shared/utils/validation.utils';
-
-import { 
+    isValidEmail,
     uploadOnCloudinary,
     deleteFromCloudinary,
-} from '#shared/services/storage.service';
-
-import { 
     getCache,
     setCache,
     deleteCache,
-    deleteMultipleCache
-} from '#lib/cache';
+    deleteMultipleCache,
+    cloudinaryQueue,
+    emailQueue,
+    otpQueue
+} from '#shared';
 
-import { 
-    emailQueue 
-} from './auth.queue.js';
-
-import otpQueue from '#shared/jobs/otp.jobs';
 
 const register = asyncHandler(async (req, res) => {
     let profilePictureLocalPath = "";
