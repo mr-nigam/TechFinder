@@ -2,7 +2,7 @@ import { Queue } from 'bullmq';
 import redisConnection from '#config/redis';
 
 
-const deleteFromCloudinaryQueue = new Queue("deleteFromCloudinary",{
+const cloudinaryDeleteQueue = new Queue("deleteFromCloudinary",{
     connection: redisConnection,
 
     defaultJobOptions: {
@@ -17,4 +17,4 @@ const deleteFromCloudinaryQueue = new Queue("deleteFromCloudinary",{
 });
 
 
-export default deleteFromCloudinaryQueue;
+export default cloudinaryDeleteQueue;

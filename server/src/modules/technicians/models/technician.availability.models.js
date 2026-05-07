@@ -1,4 +1,5 @@
 import pool from '#config/db';
+import createUpdatedAtTrigger from '#shared/utils/dbTriggers.util';
 
 
 const createTechnicianAvailabilityTable = async () => {
@@ -59,6 +60,8 @@ const createTechnicianAvailabilityTable = async () => {
             )
             WHERE is_active = true;  
         `);
+        
+        await createUpdatedAtTrigger('technician_availability');
 
         console.log("Technician Availability table and indexes created successfully");
 

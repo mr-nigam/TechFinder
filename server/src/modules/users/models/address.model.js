@@ -1,4 +1,5 @@
 import pool from '#config/db';
+import createUpdatedAtTrigger from '#shared/utils/dbTriggers.util';
 
 
 const createAddressesTable = async () => {
@@ -42,7 +43,7 @@ const createAddressesTable = async () => {
 
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-            );
+            );  
         `);
 
     
@@ -63,8 +64,9 @@ const createAddressesTable = async () => {
             ON addresses(user_id, is_default)
             WHERE deleted_at IS NULL;
         `);
+        
+        await createUpdatedAtTrigger('addresses');
 
-        // put trigger on update
         console.log("Addresses table and indexes created successfully");
 
     }catch(err){

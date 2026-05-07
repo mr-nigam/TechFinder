@@ -4,20 +4,14 @@ import ApiError from '#utils/apiError';
 import ApiResponse from '#utils/apiResponse';
 import redisConnection from '#config/redis';
 import formatMyProfile from '#utils/user.util';
-import deleteFromCloudinaryQueue from '#utils/cloudinary.jobs';
+import cloudinaryDeleteQueue from '#utils/cloudinary.jobs';
+import removeLocalFile from '#shared/utils/file';
 
 import { 
     getCache,
     setCache,
     deleteCache,
 } from '#lib/cache';
-
-import {
-    uploadOnCloudinary,
-    deleteFromCloudinary,
-    removeLocalFile
-} from '#utils/cloudinary.util';
-
 
 const USER_PROFILE_FIELDS = `
     id,
@@ -39,27 +33,21 @@ const USER_PROFILE_FIELDS = `
     total_money_save
 `;
 
-const getMyProfile = asyncHandler(async (req, res) => {
+const getProfile = asyncHandler(async (req, res) => {
     const user = req.user;
 
     const cacheKey = `profile:user:${user.id}`;
     
     let myProfile;
 
-    try{
-        myProfile = await getCache(cacheKey);
-    }catch(err){
-        console.error("Redis GET failed:", err.message);
-    }
+    myProfile = await getCache(cacheKey);
     
-    if(!myProfile || Object.keys(myProfile).length === 0){
+    if(!myProfile){
         const query = `
             SELECT
                 ${USER_PROFILE_FIELDS}
             FROM users
-            WHERE id = $1
-                AND deleted_at IS NULL
-                AND deactivated_at IS NULL;
+            WHERE id = $1;
         `;
 
         const result = await pool.query(query, [user.id]);
@@ -74,11 +62,7 @@ const getMyProfile = asyncHandler(async (req, res) => {
 
         myProfile = formatMyProfile(user);
 
-        try{
-            await setCache(cacheKey,myProfile,600);
-        }catch(err){
-            console.error("Redis SET failed:", err.message);
-        }
+        await setCache(cacheKey,myProfile,600);
     }
 
     return res
@@ -92,7 +76,7 @@ const getMyProfile = asyncHandler(async (req, res) => {
         );
 });
 
-const updateUserProfile = asyncHandler(async (req, res) => {
+const updateProfile = asyncHandler(async (req, res) => {
     const user = req.user;
 
     try{
@@ -129,9 +113,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
                 bio = $3,
                 gender = $4,
                 date_of_birth = $5
-            WHERE id = $6
-                AND deleted_at IS NULL
-                AND deactivated_at IS NULL;
+            WHERE id = $6;
             RETURNING ${USER_PROFILE_FIELDS};
         `;
 
@@ -212,7 +194,7 @@ const updateProfilePicture = asyncHandler(async (req, res) => {
         WHERE id = $1;
     `;
     let result = await pool.query(query,[user.id]);
-
+    const oldPublicId = result.rows[0].profile_picture_public_id;
     if(result.rowCount === 0){
         throw new ApiError(
             404,
@@ -235,16 +217,14 @@ const updateProfilePicture = asyncHandler(async (req, res) => {
         user.id
     ];
 
-    const newres  = await pool.query(query,values);
-
-    const oldPublicId = result.rows[0].profile_picture_public_id;
+    await pool.query(query,values);
 
     const cacheKey = `profile:user:${user.id}`;
-    // 4️⃣ Delete old image (async)
+    
     if(oldPublicId){
         try{
             await deleteCache(cacheKey);
-            await deleteFromCloudinaryQueue.add(
+            await cloudinaryDeleteQueue.add(
                 "delete-from-cloudinary",
                 {
                     public_id: oldPublicId,
@@ -272,7 +252,7 @@ const updateProfilePicture = asyncHandler(async (req, res) => {
 
 
 export{
-    getMyProfile,
-    updateUserProfile,
+    getProfile,
+    updateProfile,
     updateProfilePicture,
 }

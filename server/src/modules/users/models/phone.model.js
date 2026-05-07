@@ -1,4 +1,5 @@
 import pool from '#config/db';
+import createUpdatedAtTrigger from '#shared/utils/dbTriggers.util';
 
 
 const createPhonesTable = async() => {
@@ -27,9 +28,7 @@ const createPhonesTable = async() => {
                         )
                     ),
 
-                verified_at TIMESTAMPTZ,
                 deleted_at TIMESTAMPTZ,
-            
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 
@@ -42,6 +41,8 @@ const createPhonesTable = async() => {
             ON phones(user_id)
             WHERE deleted_at IS NULL;
         `);
+
+        await createUpdatedAtTrigger('phones');
 
         console.log("Phones table and indexes created successfully");
 

@@ -14,6 +14,7 @@ const router = Router();
 
 router.use(verifyJWT);
 
+
 router.route("/me")
     .get(getMyProfile)
     .patch(updateUserProfile);
@@ -23,6 +24,7 @@ router.patch(
     upload.single("profilePicture"),
     updateProfilePicture
 );
+
 
 export default router;
 

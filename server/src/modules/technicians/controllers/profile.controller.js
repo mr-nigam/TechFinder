@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import pool from '#config/db';
-import redisConnection from '#config/redis';
 
 import ApiError from '#shared/utils/apiError';
 import ApiResponse from '#shared/utils/apiResponse';
@@ -24,13 +23,34 @@ import {
     deleteMultipleCache
 } from '#lib/cache';
 
+const TECHNICIAN_PROFILE_FIELDS = `
+    id,
+    specialization,
+    about,
+    languages_spoken,
+    verification_status,
+    verified_at,
+    status,
+    service_radius_km,
+    last_seen_at,
+    ST_GeoJSON(current_location) AS current_location,
+    current_location_captured_at,
+    current_location_accuracy_meters,
+    location_source,
+    average_rating,
+    total_reviews,
+    total_jobs_completed,
+    total_money_earned,
+    created_at
+`;
+
 
 const register = asyncHandler(async (req, res) => {
     const user = req.user;
     
     await checkUserDetails(user);
 
-    const {
+    let {
         specialization = "",
         about = "",
         languages_spoken = [],
@@ -52,6 +72,10 @@ const register = asyncHandler(async (req, res) => {
             "All required fields must be provided"
         );
     }
+    
+    if(service_radius_km<0) {
+        service_radius_km = 15;
+    }
 
     const client = await pool.connect();
     
@@ -67,7 +91,7 @@ const register = asyncHandler(async (req, res) => {
                 service_radius_km
             )
             VALUES ($1, $2, $3, $4, $5)
-            RETURNING *;
+            RETURNING ${TECHNICIAN_PROFILE_FIELDS};
         `;
 
         let values = [
@@ -100,7 +124,7 @@ const register = asyncHandler(async (req, res) => {
             phone: user.phone,
         };
         
-        technician = formatTechnicianProfile(technician);
+        myProfile = formatTechnicianProfile(user,technician);
 
         await client.query("COMMIT");
 
@@ -109,7 +133,7 @@ const register = asyncHandler(async (req, res) => {
             .json(
                 new ApiResponse(
                     201,
-                    technician,
+                    myProfile,
                     "Technician registered successfully"
                 )
             );
@@ -133,7 +157,128 @@ const register = asyncHandler(async (req, res) => {
     }
 });
 
-const updateProfile = asyncHandler(async (req, res) =>{ });
+const getProfile = asyncHandler(async (req, res) =>{
+    const user = req.user;
+    const technician = req.technician;
+    
+    if(!technician){
+        throw new ApiError(
+            404,
+            "Technician profile not found"
+        );
+    }
+
+    const cacheKey = `profile:technician:${technician.id}`;
+    let profile;
+
+    profile = await getCache(cacheKey);
+
+
+    if(!profile){
+        const query = `
+            SELECT ${TECHNICIAN_PROFILE_FIELDS} 
+            FROM technicians
+            WHERE id = $1
+            LIMIT 1;
+        `;
+
+        const result = await pool.query(query, [technician.id]);
+        const techie = result.rows[0];
+
+        if(!techie){
+            throw new ApiError(
+                404, 
+                "technician not found"
+            );
+        }
+
+        profile = formatTechnicianProfile(user,techie);
+
+        await setCache(cacheKey,profile,600);
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                profile,
+                "Technician profile fetched successfully"
+            )
+        );
+});
+
+const updateProfile = asyncHandler(async (req, res) =>{ 
+    const user = req.user;
+    const technician = req.technician;
+    
+    let {
+        about = "",
+        languages_spoken = [],
+        service_radius_km = 15,
+    } = req.body;
+
+    about = about?.trim() || "";
+    
+    if( !about ||
+        !Array.isArray(languages_spoken) ||
+        languages_spoken.length === 0
+    ){
+        throw new ApiError(
+            400,
+            "All required fields must be provided"
+        );
+    }
+
+    if(service_radius_km<0) {
+        service_radius_km = 15;
+    }
+    
+    let query = `
+        UPDATE technicians
+        SET about = $1,
+            languages_spoken = $2
+            service_radius_km = $3
+        WHERE id = $4
+        RETURNING ${TECHNICIAN_PROFILE_FIELDS};
+    `;
+    const values = [
+        about,
+        languages_spoken,
+        service_radius_km,
+        technician.id
+    ];
+
+    const result = await pool.query(query,values);
+
+    if(result.rowCount === 0){
+        throw new ApiError(
+            400,
+            "Technician profile updation falied"
+        );
+    }
+
+    const profile = formatTechnicianProfile(user,result.rows[0]);
+
+    const cacheKey = `profile:technician:${technician.id}`;
+    
+    try{
+        await deleteCache(cacheKey);
+        await setCache(cacheKey,profile,600);
+    }catch(err){
+        console.error("Redis Err: ",err.message);
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                profile,
+                "Technician profile updated successfully"            
+            )
+        );
+});
 
 const deleteAccount = asyncHandler(async (req, res) =>{
     const user = req.user;
@@ -274,7 +419,7 @@ const deleteAccount = asyncHandler(async (req, res) =>{
                 technicianId: technician.id
             },
             {
-                jobId: `technician:-deleted:email:${technician.id}`
+                jobId: `technician:deleted:email:${technician.id}`
             }
         );
 
@@ -295,13 +440,109 @@ const deleteAccount = asyncHandler(async (req, res) =>{
 
 });
 
-const getReviews = asyncHandler(async (req, res) =>{ });
-const getProfile = asyncHandler(async (req, res) =>{ });
-const updateCurrentLocation = asyncHandler(async (req, res) =>{ });
+const updateCurrentLocation = asyncHandler(async (req, res) =>{
+    const technician = req.technician;
+
+    if(!technician){
+        throw new ApiError(
+            404,
+            "Technician profile not found"
+        );
+    }
+
+    let {
+        lat,
+        lng,
+        captured_at,
+        accuracy_meters,
+        source
+    } = req.body;
+
+    if(lat === undefined || lng === undefined){
+        throw new ApiError(
+            400,
+            "Give proper locations coordinates"
+        );
+    }
+
+    lat = Number(lat);
+    lng = Number(lng);
+
+    if(isNaN(lat) ||
+        isNaN(lng) || 
+        lat > 90 ||
+        lat < -90 ||
+        lng > 180 ||
+        lng < - 180
+    ){
+        throw new ApiError(
+            400,
+            "Invalid Lonigitude and Latitude coordinates"
+        );
+    }
+
+    const allowedSources = [
+        "gps",
+        "manual_pin",
+        "geocoded",
+        "admin"
+    ];
+    
+    if(!allowedSources.includes(source)){
+        source = "gps";
+    }
+
+    const query = `
+        UPDATE technicians
+        SET current_location = ST_SetSRID(
+                ST_MakePoint($1,$2), 
+                4326
+            ),
+            current_location_captured_at = $3,
+            current_location_accuracy_meters = $4,
+            location_source  = $5
+        WHERE id = $6
+        RETURNING ${TECHNICIAN_PROFILE_FIELDS};
+    `;
+
+    const values = [
+        lng,
+        lat,
+        captured_at,
+        accuracy_meters,
+        source,
+        technician.id
+    ];
+
+    const result = await pool.query(query,values);
+
+    const location = result.rows[0];
+    
+    if(!location){
+        throw new ApiError(
+            500,
+            "Failed to update the current location"
+        );
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                location,
+                "Current location updated successfully"
+            )
+        );
+});
+
+const getReviews = asyncHandler(async (req, res) =>{});
 
 
 export {
     register,
+    getProfile,
     updateProfile,
     deleteAccount,
+    updateCurrentLocation
 };

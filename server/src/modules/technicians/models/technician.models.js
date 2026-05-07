@@ -1,4 +1,5 @@
 import pool from '#config/db';
+import createUpdatedAtTrigger from '#shared/utils/dbTriggers.util';
 
 
 const createTechniciansTable = async () => {
@@ -76,7 +77,7 @@ const createTechniciansTable = async () => {
 
         deleted_at TIMESTAMPTZ,
         deactivated_at TIMESTAMPTZ,
-
+        
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
@@ -105,6 +106,8 @@ const createTechniciansTable = async () => {
       CREATE INDEX IF NOT EXISTS idx_tech_status
       ON technicians(status);
     `);
+
+    await createUpdatedAtTrigger('technicians');
 
     console.log("Technicians table and indexes created successfully");
 

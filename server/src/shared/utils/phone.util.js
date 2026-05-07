@@ -1,9 +1,7 @@
 import ApiError from './apiError.js';
 
 
-const isValidPhone = ({
-    phone = "",
-}) => {
+const isValidPhone = (phone) => {
     const phone = String(phone).trim();
 
     // Phone number digits only

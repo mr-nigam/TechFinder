@@ -16,8 +16,13 @@ import {
 
 import {
     generateAccessToken,
-    generateRefreshToken
+    generateRefreshToken,
 } from '#shared/utils/tokens.util';
+
+import {
+    getAccessCookieOptions,
+    getRefreshCookieOptions,
+} from '#shared/utils/cookie.util';
 
 import {
     hasEmpty,
@@ -29,8 +34,6 @@ import {
     deleteFromCloudinary,
 } from '#shared/services/storage.service';
 
-import client from '#lib/twilioClient';
-
 import { 
     getCache,
     setCache,
@@ -39,11 +42,12 @@ import {
 } from '#lib/cache';
 
 import { 
-    otpQueue,
     emailQueue 
 } from './auth.queue.js';
 
-const registerUser = asyncHandler(async (req, res) => {
+import otpQueue from '#shared/jobs/otp.jobs';
+
+const register = asyncHandler(async (req, res) => {
     let profilePictureLocalPath = "";
 
     try{
@@ -86,7 +90,7 @@ const registerUser = asyncHandler(async (req, res) => {
             );
         }
 
-        isValidPhone({ phone });
+        isValidPhone(phone);
 
         // check email format
         profilePictureLocalPath = req?.file?.path || "";
@@ -201,7 +205,9 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 });
 
-const logInUser = asyncHandler (async (req, res) => {
+const logIn = asyncHandler (async (req, res) => {
+    const user = req.user;
+
     const email = req.body.email?.trim().replace(/"/g, "") || "";
     const username = req.body.username?.trim() || "";
     const phone = req.body.phone?.trim()|| "";
@@ -223,36 +229,29 @@ const logInUser = asyncHandler (async (req, res) => {
     
     const filter = email || username || phone; 
 
-     
-    let cacheKey = `auth:user:${filter}`;
-    let user;
-
-    // Try Redis
-    user = await getCache(cacheKey);
-    
-    if(!user){
-        const query = `
-            SELECT id, username, email, password 
-            FROM users
+    const query = `
+        SELECT 
+            id,
+            username,
+            email, 
+            password 
+        FROM users
             WHERE (email = $1
                     OR username = $1
                     OR phone = $1
                 )
                 AND deleted_at IS NULL
                 AND deactivated_at IS NULL
-            LIMIT 1; 
-        `;
+        LIMIT 1; 
+    `;
         
-        const result = await pool.query(query,[filter]);
+    const result = await pool.query(query,[filter]);
 
-        user = result.rows[0];
-
-        if(!user){
-            throw new ApiError(
-                400,
-                "Invalid credentials"
-            );
-        }
+    if(result.rowCount === 0){
+        throw new ApiError(
+            400,
+            "Invalid credentials"
+        );
     }
 
     const isMatch = await bcrypt.compare(password,user.password);
@@ -262,21 +261,23 @@ const logInUser = asyncHandler (async (req, res) => {
             "Invalid credentials"
         );
     }
-        
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
+    
+    const accessToken = generateAccessToken(result.rows[0]);
+    const refreshToken = generateRefreshToken(result.rows[0]);
         
     let query = `
         UPDATE users
         SET refresh_token = $1
         WHERE id = $2
-        RETURNING *;
+        RETURNING
+            id,
+            username,
+            first_name,
+            last_name,
+            role;
     `;
     
-    const result = await pool.query(query,[refreshToken,user.id]);
-    user = result.rows[0];
-
-    await setCache(cacheKey, user, 600);
+    result = await pool.query(query,[refreshToken,user.id]);
 
     return res
         .status(200)
@@ -285,31 +286,81 @@ const logInUser = asyncHandler (async (req, res) => {
         .json(
             new ApiResponse(
                 200,
-                {user: formatOwnUser(user)},
+                {user: result.rows[0]},
                 "User logged in successfully"
             )
         );
 
 });
 
-const logOutUser = asyncHandler (async (req, res) => {
+const logOut = asyncHandler (async (req, res) => {
     const user = req.user;
+    const technician = req.technician || "";
 
-    const query = `
-        UPDATE users
-        SET refresh_token = NULL
-        WHERE id = $1;
-    `;
+    const client = await pool.connect();
 
-    const result = await pool.query(query,[user.id]);
+    try{
+        await client.query("BEGIN");
+
+        let query = `
+            UPDATE users
+            SET refresh_token = NULL
+            WHERE id = $1;
+        `;
+
+        await client.query(query,[user.id]);
+
+        if(technician){
+            let query = `
+                UPDATE technicians
+                SET status = 'offline',
+                    last_seen_at = NOW()
+                WHERE id = $1;
+            `;
+
+            await client.query(query,[technician.id]);
+        }
+
+        await client.query("COMMIT");
+
+    }catch(err){
+        try{
+            await client.query("ROLLBACK");
+        }catch(_) {}
+
+        throw new ApiError(
+            500,
+            "Error while logging out"
+        );
+
+    }finally{
+        client.release();
+    }
+    
+    res.clearCookie(
+        "accessToken",
+        {
+            httpOnly: true,
+            secure: true,
+            sameSite: "strict",
+        }
+    );
+    
+    res.clearCookie(
+        "refreshToken",
+        {
+            httpOnly: true,
+            secure: true,
+            sameSite: "strict",
+        }
+    );
 
     const cacheKeys = [
-        `auth:user:${user.username}`,
-        `auth:user:${user.email}`,
-        `auth:user:${user.phone}`
+        `auth:user:${user.id}`,
+        `auth:technician:${technician.id}`
     ].filter(Boolean);
 
-    await deleteMultipleCache(cacheKeys); 
+    await deleteMultipleCache(cacheKeys);
 
     return res
         .status(200)
@@ -317,7 +368,7 @@ const logOutUser = asyncHandler (async (req, res) => {
             new ApiResponse(
                 200,
                 {},
-                "User logged Out"
+                "Logged out successfully"
             )
         );
 });
@@ -396,14 +447,14 @@ const refreshAccessToken = asyncHandler (async (req, res) => {
     }
 });
 
-const forgotPassword = asyncHandler(async (req, res) => {});
-const resetPassword = asyncHandler(async (req, res) => {});
+const forgotPassword = asyncHandler(async (req, res) => { });
+const resetPassword = asyncHandler(async (req, res) => { });
 
 
 export {
-    registerUser,
-    logInUser,
-    logOutUser,
+    register,
+    logIn,
+    logOut,
     refreshAccessToken,
     forgotPassword,
     resetPassword

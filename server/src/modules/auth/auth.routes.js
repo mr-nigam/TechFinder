@@ -3,9 +3,9 @@ import verifyJWT from '#middlewares/auth.middleware';
 import upload from '#middlewares/multer.middleware';
 
 import {
-    registerUser,
-    logInUser,
-    logOutUser,
+    register,
+    logIn,
+    logOut,
     refreshAccessToken,
     forgotPassword,
     resetPassword
@@ -16,14 +16,14 @@ const router = Router();
 
 
 // Public Routes
-router.post("/register", upload.single("profilePicture"), registerUser);
-router.post("/login", logInUser);
+router.post("/register", upload.single("profilePicture"), register);
+router.post("/login", logIn);
 router.post("/refresh-token", refreshAccessToken);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
 
 // Proctected Routes
-router.post("/logout", verifyJWT, logOutUser);
+router.post("/logout", verifyJWT, logOut);
 
 
 export default router;

@@ -16,128 +16,63 @@ import {
 } from '../jobs/phone.queue.js';
 
 
-const addPhoneNumber = asyncHandler(async (req, res) => {
-    const client = await pool.connect();
+const addPhone = asyncHandler(async (req, res) => {
     const user = req.user;
 
-    try{
-        await client.query("BEGIN");
+    let {phone, phone_type} = req.body;
 
-        const {
-            phone_number = "",
-            country_code = "",
-            phone_number_type = "alternate",
-            is_default = "",
-        } = req.body;
+    phone = phone?.trim() || "";
+    phone_type = phone_type?.trim() || "alternate";
 
-        const normalized = {
-            phone_number: phone_number?.trim() || "",
-            country_code: country_code?.trim() || "",
-            phone_number_type: phone_number_type?.trim() || "alternate",
-        };
-        
-        const requiredFields = [
-            normalized.phone_number,
-            normalized.country_code,
-            normalized.phone_number_type
-        ];
-
-        if(hasEmpty(requiredFields)){
-            throw new ApiError(
-                400,
-                "All required fields are not given"
-            );
-        }
+    if(!phone){
+        throw new ApiError(
+            400,
+            "Phone number is missing"
+        );
+    }
     
-        isValidPhoneNumber({
-            phone_number: normalized.phone_number,
-            country_code: normalized.country_code
-        });
+    isValidPhone(phone);
 
-        if(is_default){
-            const query = `
-                UPDATE phone_numbers
-                SET is_default = false
-                WHERE user_id = $1
-                    AND is_default = true
-                    AND is_deleted = false;
-            `;
-            await pool.query(
-                query,
-                [req.user.id]
-            );
-        }
+    const allowedPhoneTypes = [
+        "family",
+        "whatsapp",
+        "emergency",
+        "alternate",
+    ];
 
+    if(!allowedPhoneTypes.includes(phone_type)){
+        throw new ApiError(
+            400,
+            "Invalid phone type"
+        );
+    }
+
+    let addedPhone;
+    try{
         const query = `
-            INSERT INTO contacts(
+            INSERT INTO phones(
                 user_id,
-                phone_number,
-                country_code,
-                phone_number_type,
-                is_default
+                phone,
+                phone_type
             )
-            VALUES(
-                $1, $2, $3, $4, $5
-            )
-            RETURNING *;
+            VALUES( $1, $2, $3 )
+            RETURNING 
+                id,
+                phone,
+                phone_type,
+                created_at;
         `;
 
         const values = [
-            req.user.id,
-            normalized.phone_number,
-            normalized.country_code,
-            normalized.phone_number_type,
-            is_default
+            user.id,
+            phone,
+            phone_type,
         ];
-
-        const result = await pool.query(
-            query,
-            values
-        );
-
-        const ph = result.rows[0];
         
-        if(!phoneNumber){
-            throw new ApiError(
-                400,
-                "Phone Number addition failed"
-            );
-        }
-        
-        await client.query("COMMIT");
+        const result = await pool.query( query, values);
 
-        try{
-            await emailQueue.add(
-                "phone-number-added", 
-                { 
-                    userId: user.id,
-                    phoneId: ph.id
-                },
-                {
-                    jobId: `email:phone-number-added:${ph.id}`
-                }
-        );
-        }catch(err){
-            console.error("Queue error:", err.message);
-        }
-
-        return res
-            .status(201)
-            .json(
-                new ApiResponse(
-                    201,
-                    {
-                        phoneNumber: 
-                        formatPhoneNumbers(ph)
-                    },
-                    "Phone Number added successfully"
-                )
-            );
-
+        addedPhone = result.rows[0];
     }catch(err){
-
-        await client.query("ROLLBACK");
-
         if(err.code === "23505"){
             throw new ApiError(
                 409,
@@ -146,29 +81,51 @@ const addPhoneNumber = asyncHandler(async (req, res) => {
         }
         
         throw new ApiError(
-            401,
+            500,
             "Phone Number addition failed"
         );
 
-    }finally{
-        await client.release();
     }
+    
+    try{
+        await emailQueue.add(
+            "phone-added", 
+            { 
+                userId: user.id,
+                phoneId: addedPhone.id
+            },
+            {
+                jobId: `email:phone-added:${addedPhone.id}`
+            }
+        );
+    }catch(err){
+        console.error("Queue error:", err.message);
+    }
+
+    return res
+        .status(201)
+        .json(
+            new ApiResponse(
+                201,
+                { phone: addedPhone },
+                "Phone Number added successfully"
+            )
+        );
 });
 
-const getMyPhoneNumbers = asyncHandler(async (req, res) => {
+const getPhones = asyncHandler(async (req, res) => {
     const user = req.user;
+
     const query = `
         SELECT 
             id,
-            country_code,
-            phone_number,
-            phone_number_type,
-            is_default,
-            is_verified
-        FROM phone_numbers
+            phone,
+            phone_type,
+            created_at
+        FROM phones
         WHERE user_id = $1
             AND deleted_at IS NULL
-        ORDER BY is_default DESC, created_at ASC;
+        ORDER BY created_at ASC;
     `;
     
     const result = await pool.query(query, [user.id]);
@@ -184,7 +141,7 @@ const getMyPhoneNumbers = asyncHandler(async (req, res) => {
         );
 });
 
-const deletePhoneNumber = asyncHandler(async (req, res) => {
+const deletePhone = asyncHandler(async (req, res) => {
     const phoneId = req.params.phoneId;
     const user = req.user;
 
@@ -195,12 +152,8 @@ const deletePhoneNumber = asyncHandler(async (req, res) => {
         );
     }
 
-    // add one more endpoint, if this is default number that 
-    // set new default update that then come here
-    // either we can ask it do it by own
-
     const query = `
-        UPDATE phone_numbers
+        UPDATE phones
         SET deleted_at = NOW()
         WHERE id = $1
             AND user_id = $2
@@ -212,7 +165,7 @@ const deletePhoneNumber = asyncHandler(async (req, res) => {
         [phoneId, user.id]
     );
 
-    const ph = result.rows[0];
+    
     if(result.rowCount === 0){
         throw new ApiError(
             400,
@@ -222,13 +175,14 @@ const deletePhoneNumber = asyncHandler(async (req, res) => {
 
     try{
         await phoneQueue.add(
-            "delete-phone-number",
+            "delete-phone",
             { 
-                phoneId: ph.id,
+                userId: user.id,
+                phoneId: phoneId,
             },
             {
-                jobId: `delete:phone-number:${ph.id}`,
-                delay: 1 * 24 * 60 * 60 * 1000 // 1 days in milliseconds
+                jobId: `delete:phone:${phoneId}`,
+                delay: 1 * 24 * 60 * 60 * 1000
             }
         );
     }catch(err){
@@ -237,13 +191,13 @@ const deletePhoneNumber = asyncHandler(async (req, res) => {
 
     try{
         await emailQueue.add(
-            "deleted-phone-number", 
+            "delete-phone", 
             { 
                 userId: user.id,
-                phoneId: ph.id
+                phoneId: phoneId
             },
             { 
-                jobId: `email:deleted:phone-number:${ph.id}`
+                jobId: `email:deleted:phone:${phoneId}`
             }
         );
     }catch(err){
@@ -262,129 +216,9 @@ const deletePhoneNumber = asyncHandler(async (req, res) => {
 
 });
 
-const setDefaultPhoneNumber = asyncHandler(async (req, res) => {
-    const phoneId = req.params.phoneId;
-    const user = req.user;
-
-    if(!isValidUUID(phoneId)){
-        throw new ApiError(
-            404,
-            "INvalid phone number id"
-        );
-    }
-
-    const client = await pool.connect();
-
-    try{
-        await client.query("BEGIN");
-
-        let query = `
-            UPDATE phone_numbers
-            SET is_default = CASE
-                WHEN id = $1 THEN true
-                ELSE false
-            END
-            WHERE user_id = $2
-                AND deleted_at IS NULL
-            RETURNING *;
-        `;
-
-        let result = await pool.query(
-            query,
-            [phoneId, user.id]
-        );
-
-        if(result.rowCount === 0){
-            throw new ApiError(
-                404,
-                "Setting default phone number failed"
-            );
-        }
-        
-        let newDefaultNumber = result.rows[0];
-
-        query = `
-            UPDATE users
-            SET 
-                primary_phone_number = $1,
-                country_code = $2,
-                is_primary_phonet_number_verified = $3,
-            WHERE id = $4
-                AND deleted_at IS NULL
-                AND deactivated_at IS NULL; 
-        `;
-
-        let values = [
-            newDefaultNumber.phone_number,
-            newDefaultNumber.country_code,
-            newDefaultNumber.is_verified,
-            user.id
-        ];
-
-        result = await pool.query(query, [values]);
-
-        if(result.rowCount === 0){
-            throw new ApiError(
-                404,
-                "Setting default phone number failed"
-            );
-        }
-
-        await client.query("COMMIT");
-
-        try{
-            await emailQueue.add(
-                "set-default-phone-number", 
-                { 
-                    userId: user.id,
-                    phoneId: newDefaultNumber.id
-                },
-                { 
-                    jobId: `email:set-default-phone-number:${ph.id}`
-                }
-               
-        );
-        }catch(err){
-            console.error("Queue error:", err.message);
-        }
-
-        return res
-            .status(200)
-            .json(
-                new ApiResponse(
-                    200,
-                    newDefaultNumber.phone_number,
-                    "This is Default Address from now"
-                )
-            );
-
-    }catch(err){
-
-        await client.query("ROLLBACK");
-        
-        throw new ApiError(
-            401,
-            err.message || "Setting default phone number is failed"
-        );
-
-    }finally{
-        await client.release();
-    }
-});
-
-const sendPhoneNumberOtp = asyncHandler(async (req, res) => {});
-
-const resendPhoneNumberOtp = asyncHandler(async (req, res) => {});
-
-const verifyPhoneNumber = asyncHandler(async (req, res) => {});
-
 
 export {
-    addPhoneNumber,
-    getMyPhoneNumbers,
-    deletePhoneNumber,
-    setDefaultPhoneNumber,
-    sendPhoneNumberOtp,
-    resendPhoneNumberOtp,
-    verifyPhoneNumber
+    addPhone,
+    getPhones,
+    deletePhone,
 };

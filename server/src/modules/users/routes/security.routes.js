@@ -2,40 +2,35 @@ import { Router } from 'express';
 import verifyJWT from '#middlewares/auth.middleware';
 
 import {
-    changeCurrentPassword,
+    changePassword,
     changeEmail,
     verifyEmail,
-    sendEmailVerification,
-    resendEmailVerification,
-} from '../controllers/account.controller.js';
+    sendEmailOtp,
+    changePrimaryPhone,
+    verifyPrimaryPhone,
+    sendPrimaryPhoneOtp
+} from '../controllers/security.controller.js';
 
 
 const router = Router();
 
+
 router.use(verifyJWT);
 
 
+router.patch("/password", changePassword);
+
 router.patch("/email",changeEmail);
 
-router.patch(
-    "/password",
-    changeCurrentPassword
-);
+router.post("/email/verify", verifyEmail);
 
-router.post(
-    "/email/verification/send",
-    sendEmailVerification
-);
+router.post("/email/otp",sendEmailOtp);
 
-router.post(
-    "/email/verification/resend",
-    resendEmailVerification
-);
+router.patch("/primary-phone", changePrimaryPhone);
 
-router.post(
-    "/email/verification/verify",
-    verifyEmail
-);
+router.post( "/primary-phone/verify",verifyPrimaryPhone);
+
+router.post("/primary-phone/otp",sendPrimaryPhoneOtp);
 
 
 export default router;

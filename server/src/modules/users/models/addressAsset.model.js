@@ -1,4 +1,5 @@
 import pool from '#config/db';
+import createUpdatedAtTrigger from '#shared/utils/dbTriggers.util';
 
 
 const createAddressesAssetsTable = async () => {
@@ -46,6 +47,8 @@ const createAddressesAssetsTable = async () => {
             WHERE deleted_at IS NULL;
         `);
         
+        await createUpdatedAtTrigger('address_assets');
+
         console.log("Addresses assests table and indexes created successfully");
 
     }catch(err){

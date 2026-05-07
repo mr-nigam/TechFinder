@@ -1,4 +1,5 @@
 import pool from '#config/db';
+import createUpdatedAtTrigger from '#shared/utils/dbTriggers.util';
 
 
 const createUsersTable = async() => {
@@ -100,7 +101,8 @@ const createUsersTable = async() => {
             ON users(primary_phone_number);
         `);
         
-        // put trigger on update
+        await createUpdatedAtTrigger('users');
+        
         console.log("User table and indexes created successfully");
     }catch(err){
 

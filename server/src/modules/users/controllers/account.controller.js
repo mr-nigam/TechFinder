@@ -14,6 +14,7 @@ import{
 } from '#lib/cache';
 
 
+// deleted/deactivate associcated technician also
 const deactivateAccount = asyncHandler(async (req, res) => {
     const user = req.user;
     const password = req.body.password?.trim() || "";

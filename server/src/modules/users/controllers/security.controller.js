@@ -1,4 +1,3 @@
-import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import pool from '#config/db';
 
@@ -6,15 +5,28 @@ import ApiError from '#shared/utils/apiError';
 import ApiResponse from '#shared/utils/apiResponse';
 import asyncHandler from '#shared/utils/asyncHandler'
 
-import { 
-    getCache,
-    setCache,
+import hashPassword from '#shared/utils/password.util';
+
+import {
+    generateAccessToken,
+    generateRefreshToken,
+} from '#shared/utils/tokens.util';
+
+import {
+    getAccessCookieOptions,
+    getRefreshCookieOptions,
+} from '#shared/utils/cookie.util';
+
+
+import {
     deleteCache,
     deleteMultipleCache
 } from '#lib/cache';
 
 
-const changeCurrentPassword = asyncHandler(async (req, res) => {
+const changePassword = asyncHandler(async (req, res) => {
+    const user = req.user;
+
     const{oldPassword, newPassword} = req.body;
 
     if(!oldPassword || !newPassword){
@@ -32,28 +44,24 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     }
 
     let query = `
-        SELECT id, password
+        SELECT password
         FROM users
         WHERE id = $1
-            AND is_deleted = false
         LIMIT 1;
     `;
 
-    let result = await pool.query(
-        query,
-        [req.user.id]
-    );
+    let result = await pool.query( query, [user.id]);
 
-    let user = result.rows[0];
-
-    if(!user){
+    if(result.rowCount === 0){
         throw new ApiError(
             404,
-            "invalid credentials"
+            "user not found"
         );
     }
 
-    const isMatch = await bcrypt.compare(oldPassword,user.password);
+    let oldHashedpassword = result.rows[0].password;
+
+    const isMatch = await bcrypt.compare(oldPassword,oldHashedpassword);
     if(!isMatch){
         throw new ApiError(
             401,
@@ -69,55 +77,65 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
         UPDATE users
         set password = $1,
             refresh_token = $2,
-            password_changed_at = NOW(),
-            updated_at = NOW()
+            password_changed_at = NOW()
         WHERE id = $3
-        RETURNING *;
+        RETURNING
+            id,
+            username,
+            first_name,
+            last_name,
+            role;
     `;
 
     const values = [
         newHashedPassword,
         refreshToken,
-        req.user.id,
+        user.id,
     ];
     
-    result = await pool.query(
-        query,
-        values
-    );
+    result = await pool.query(query, values);
 
-    user = result.rows[0];
-
-    if(!user){
+    if(result.rowCount === 0){
         throw new ApiError(
             404,
             "invalid credentials"
         );
     }
 
+    const cacheKey = `profile:user:${user.id}`;
+    await deleteCache(cacheKey);
+
     return res
-    .status(200)
-    .cookie("accessToken",accessToken,getAccessCookieOptions())
-    .cookie("refreshToken",refreshToken,getRefreshCookieOptions())
-    .json(
-        new ApiResponse(
-            200,
-            {user: formatOwnUser(user)},
-            "Password changed successfully"
-        )
-    );
+        .status(200)
+        .cookie("accessToken",accessToken,getAccessCookieOptions())
+        .cookie("refreshToken",refreshToken,getRefreshCookieOptions())
+        .json(
+            new ApiResponse(
+                200,
+                {user: result.rows[0]},
+                "Password changed successfully"
+            )
+        );
     
 });
 
-const verifyEmail = asyncHandler(async (req, res) => {});
 const changeEmail = asyncHandler(async (req, res) => {});
-const sendEmailVerification = asyncHandler(async (req, res) => {});
-const resendEmailVerification = asyncHandler(async (req, res) => {});
+const sendEmailOtp = asyncHandler(async (req, res) => {});
+const verifyEmail = asyncHandler(async (req, res) => {});
+
+
+const changePrimaryPhone = asyncHandler(async (req, res) => {});
+const sendPrimaryPhoneOtp = asyncHandler(async (req, res) => {});
+const verifyPrimaryPhone = asyncHandler(async (req, res) => {});
+
+
 
 export {
-    changeCurrentPassword,
+    changePassword,
     changeEmail,
     verifyEmail,
-    sendEmailVerification,
-    resendEmailVerification,
+    sendEmailOtp,
+    changePrimaryPhone,
+    verifyPrimaryPhone,
+    sendPrimaryPhoneOtp
 };
