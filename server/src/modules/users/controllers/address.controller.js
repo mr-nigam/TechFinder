@@ -40,6 +40,7 @@ import {
 const addAddress = asyncHandler(async (req, res) => {
     const user = req.user;
     const client = await pool.connect();
+    
     try{
         client.query("BEGIN");
 
@@ -79,7 +80,6 @@ const addAddress = asyncHandler(async (req, res) => {
             lng
         ];
 
-        // validate given fields
         if(hasEmpty(requiredFields)){
             throw new ApiError(
                 400,
@@ -87,7 +87,7 @@ const addAddress = asyncHandler(async (req, res) => {
             );
         }
 
-        // remove previous default if is_defaul is true
+        // remove previous default if is_default is true
         if(is_default){
             const query = `
                 UPDATE addresses

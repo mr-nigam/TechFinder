@@ -9,14 +9,20 @@ const createNotificationsTable = async() => {
             CREATE TABLE IF NOT EXISTS notifications (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-                user_id UUID NOT NULL
-                    REFERENCES users(id) ON DELETE CASCADE,
+                recipient_id UUID NOT NULL 
+                recipient_type VARCHAR(20) NOT NULL
+                    CHECK (
+                        recipient_type IN (
+                            'user',
+                            'technician',
+                            'admin'
+                        )
+                    ),
 
                 title VARCHAR(255),
 
                 body TEXT,
 
-                
                 type VARCHAR(20) NOT NULL
                     CHECK (type IN (
                         'info',
@@ -27,6 +33,9 @@ const createNotificationsTable = async() => {
                 
                 is_read BOOLEAN DEFAULT false,
 
+                metadata JSONB DEFAULT '{}'::jsonb,
+                
+                expires_at TIMESTAMPTZ,
                 deleted_at TIMESTAMPTZ,
                 
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
