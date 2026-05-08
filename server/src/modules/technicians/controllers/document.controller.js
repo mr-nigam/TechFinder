@@ -1,29 +1,34 @@
-import jwt from 'jsonwebtoken';
-import bcrypt from "bcrypt";
-import pool from '#config/db';
-import ApiError from '#shared/utils/apiError';
-import ApiResponse from '#shared/utils/apiResponse';
-import asyncHandler from '#shared/utils/asyncHandler';
-import hashPassword from '#shared/util/password';
+import pool from '#config/db.js';
 
-import { 
+import {
+    ApiError,
+    ApiResponse,
+    asyncHandler,
+
+    hashPassword,
+    
+    generateAccessToken,
+    generateRefreshToken,
+    getAccessCookieOptions,
+    getRefreshCookieOptions,
+    
+    hasEmpty,
+    isValidUUID,
+    isValidPhone,
+    isValidEmail,
+    
     uploadOnCloudinary,
-    deleteFromCloudinary,
-} from '#shared/services/storage.service';
+    removeLocalFile,
 
-
-import {
-    isValidUUID
-} from '#shared/utils/validation.util';
-
-import { 
-    emailQueue,
-    technicianQueue
-} from '../jobs/technician.queue.js';
-
-import {
     formatDocument
-} from '#shared/utils/technician.util';
+} from '#shared';
+
+import {
+    cloudinaryQueue,
+    emailQueue,
+    otpQueue,
+    technicianQueue
+} from '#queues';
 
 
 const uploadDocument = asyncHandler(async (req, res) => { 
@@ -241,13 +246,10 @@ const deleteDocument = asyncHandler(async (req, res) =>{
 
 const verifyDocument = asyncHandler(async (req, res) =>{ });
 
-const verifyTechnician = asyncHandler(async (req, res) =>{ });
-
 
 export {
     uploadDocument,
     updateDocument,
     deleteDocument,
-    verifyDocument,
-    verifyTechnician
-}
+    verifyDocument
+};

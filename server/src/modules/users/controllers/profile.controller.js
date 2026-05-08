@@ -1,17 +1,31 @@
-import pool from '#config/db';
-import asyncHandler from '#utils/asyncHandler';
-import ApiError from '#utils/apiError';
-import ApiResponse from '#utils/apiResponse';
-
-import formatMyProfile from '#utils/user.util';
-import cloudinaryQueue from '#utils/cloudinary.jobs';
-import removeLocalFile from '#shared/utils/file';
+import pool from '#config/db.js';
 
 import { 
     getCache,
     setCache,
     deleteCache,
 } from '#lib/cache';
+
+import {
+    ApiError,
+    ApiResponse,
+    asyncHandler,
+    
+    hasEmpty,
+    isValidPhone,
+    isValidEmail,
+    
+    uploadOnCloudinary,
+    removeLocalFile,
+
+    formatMyProfile
+} from '#shared'
+
+import {
+    emailQueue,
+    cloudinaryQueue
+} from '#queues';
+
 
 const USER_PROFILE_FIELDS = `
     id,

@@ -1,7 +1,10 @@
-import pool from '#config/db';
-import ApiError from '#shared/utils/apiError';
-import ApiResponse from '#shared/utils/apiResponse';
-import asyncHandler from '#shared/utils/asyncHandler';
+import pool from '#config/db.js';
+
+import {
+    ApiError,
+    ApiResponse,
+    asyncHandler,
+} from '#shared';
 
 
 const getDashboard = asyncHandler(async (req, res) =>{

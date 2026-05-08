@@ -1,18 +1,22 @@
-import pool from '#config/db';
-import ApiError from '#shared/utils/apiError';
-import ApiResponse from '#shared/utils/apiResponse';
-import asyncHandler from '#shared/utils/asyncHandler';
+import pool from '#config/db.js';
 
 import {
+    ApiError,
+    ApiResponse,
+    asyncHandler,
+    
     hasEmpty,
-    isValidUUID,
     isValidPhone,
-} from '#shared/utils/validation.utils';
+    isValidEmail,
+    
+    uploadOnCloudinary,
+    removeLocalFile
+} from '#shared';
 
 import {
-    phoneQueue,
-    emailQueue
-} from '../jobs/phone.queue.js';
+    emailQueue,
+    phoneQueue
+} from '#queues';
 
 
 const addPhone = asyncHandler(async (req, res) => {

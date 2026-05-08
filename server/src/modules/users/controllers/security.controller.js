@@ -1,22 +1,5 @@
 import bcrypt from 'bcrypt';
-import pool from '#config/db';
-
-import ApiError from '#shared/utils/apiError';
-import ApiResponse from '#shared/utils/apiResponse';
-import asyncHandler from '#shared/utils/asyncHandler'
-
-import hashPassword from '#shared/utils/password.util';
-import otpQueue from '#shared/jobs/otp.jobs';
-
-import {
-    generateAccessToken,
-    generateRefreshToken,
-} from '#shared/utils/tokens.util';
-
-import {
-    getAccessCookieOptions,
-    getRefreshCookieOptions,
-} from '#shared/utils/cookie.util';
+import pool from '#config/db.js';
 
 import {
     getCache,
@@ -24,10 +7,33 @@ import {
     invalidateCaches
 } from '#lib/cache';
 
+
 import {
+    ApiError,
+    ApiResponse,
+    asyncHandler,
+
+    hashPassword,
+
+    generateAccessToken,
+    generateRefreshToken,
+    getAccessCookieOptions,
+    getRefreshCookieOptions,
+    
+    hasEmpty,
+    isValidUUID,
+    isValidPhone,
     isValidEmail,
-    isValidPhone
-} from '#shared/utils/validation.util';
+    
+    uploadOnCloudinary,
+    removeLocalFile
+} from '#shared';
+
+import {
+    otpQueue,
+    emailQueue
+} from '#queues';
+
 
 
 const changePassword = asyncHandler(async (req, res) => {

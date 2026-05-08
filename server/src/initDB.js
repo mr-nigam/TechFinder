@@ -1,8 +1,8 @@
-import { connectDB } from '#config/db';
-import createUsersTable from '#modules/users/models/user.model';
-import createAddressTable from '#modules/users/models/address.model';
-import createAddressesAssetsTable from '#modules/users/models/addressAsset.model';
-import createPhonesTable from '#modules/users/models/phone.model';
+import { connectDB } from '#config/db.js';
+import createUsersTable from '#modules/users/models/user.model.js';
+import createAddressTable from '#modules/users/models/address.model.js';
+import createAddressesAssetsTable from '#modules/users/models/addressAsset.model.js';
+import createPhonesTable from '#modules/users/models/phone.model.js';
 
 
 const initDB = async () => {

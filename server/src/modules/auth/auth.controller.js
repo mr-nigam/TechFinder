@@ -1,36 +1,45 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from "bcrypt";
-import pool from '#config/db';
+import crypto from 'crypto';
+import pool from '#config/db.js';
+
+import {
+    setCache,
+    getCache,
+    deleteCache,
+    invalidateCaches
+} from '#lib/cache.js';
 
 import {
     ApiError,
     ApiResponse,
     asyncHandler,
+
     hashPassword,
-    removeLocalFile,
-    formatOwnUser,
+    
     generateAccessToken,
     generateRefreshToken,
     getAccessCookieOptions,
     getRefreshCookieOptions,
+    
     hasEmpty,
-    isValidUUID,
     isValidPhone,
     isValidEmail,
+    
     uploadOnCloudinary,
-    deleteFromCloudinary,
-    getCache,
-    setCache,
-    deleteCache,
-    deleteMultipleCache,
+    removeLocalFile
+} from '#shared';
+
+import {
     cloudinaryQueue,
     emailQueue,
     otpQueue
-} from '#shared';
+} from '#queues';
 
 
 const register = asyncHandler(async (req, res) => {
-    let profilePictureLocalPath = "";
+    let localPath = "";
+    let public_id = "";
 
     try{
         const {
@@ -75,17 +84,22 @@ const register = asyncHandler(async (req, res) => {
         isValidPhone(normalized.phone);
         isValidEmail(normalized.email);
 
-        profilePictureLocalPath = req?.file?.path || "";
-        const profilePicture = profilePictureLocalPath
-            ? await uploadOnCloudinary(profilePictureLocalPath)
+        localPath = req?.file?.path || "";
+        const profilePicture = localPath
+            ? await uploadOnCloudinary(localPath)
             : null;
+        
+        public_id = profilePicture?.public_id || "";
 
         let hashedPassword = "";
         try{
+
             hashedPassword = await hashPassword(normalized.password,10);   
+        
         }catch(err){
             throw new ApiError(
-                400, err.message
+                400,
+                err.message
             );
         }
 
@@ -98,7 +112,14 @@ const register = asyncHandler(async (req, res) => {
                 password
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING *;
+            RETURNING 
+                id, 
+                username,
+                email,
+                first_name,
+                last_name,
+                phone,
+                role;
         `;
 
         const values = [
@@ -117,9 +138,7 @@ const register = asyncHandler(async (req, res) => {
 
         const result = await pool.query(query, values);
 
-        const user = result.rows[0];
-
-        if(!user){
+        if(result.rowCount === 0){
             throw new ApiError(
                 400,
                 "User registration failed"
@@ -138,20 +157,30 @@ const register = asyncHandler(async (req, res) => {
         }
 
         return res
-        .status(201)
-        .json(
-            new ApiResponse(
-                201,
-                {user: formatOwnUser(user)},
-                "User registered successfully"
-            )
-        );
+            .status(201)
+            .json(
+                new ApiResponse(
+                    201,
+                    {user: result.rows[0]},
+                    "User registered successfully"
+                )
+            );
 
     }catch(err){
         try{
-            await removeLocalFile(profilePictureLocalPath);
-        } catch{}
-        
+            await removeLocalFile(localPath);
+        }catch(_) {}
+
+
+        try{
+            await cloudinaryQueue.add(
+                "delete:image", 
+                { public_id: public_id },
+                { jobId: `register:${public_id}`}
+            );
+
+        }catch(_) {}
+
         if(err.code === "23505"){
             if (err.constraint?.includes("email")) {
                 throw new ApiError(
@@ -181,15 +210,13 @@ const register = asyncHandler(async (req, res) => {
         }
         
         throw new ApiError(
-            201,
-            "User registration failed"
+            err.statusCode || 500,
+            err.message || "User registration failed"
         );
     }
 });
 
 const logIn = asyncHandler (async (req, res) => {
-    const user = req.user;
-
     const email = req.body.email?.trim().replace(/"/g, "") || "";
     const username = req.body.username?.trim() || "";
     const phone = req.body.phone?.trim()|| "";
@@ -197,14 +224,15 @@ const logIn = asyncHandler (async (req, res) => {
 
     if(!email && !username && !phone){
         throw new ApiError(
-            404,
-            "Please provide email, username, contact number"
+            400,
+            "Please provide email, username, phone number"
         );
     }
 
     if(!password){
         throw new ApiError(
-            404,"Please enter password"
+            400,
+            "Please enter password"
         );
     }
 
@@ -227,16 +255,18 @@ const logIn = asyncHandler (async (req, res) => {
         LIMIT 1; 
     `;
         
-    const result = await pool.query(query,[filter]);
+    let result = await pool.query(query,[filter]);
 
     if(result.rowCount === 0){
         throw new ApiError(
-            400,
+            401,
             "Invalid credentials"
         );
     }
 
-    const isMatch = await bcrypt.compare(password,user.password);
+    const hashedPassword = result.rows[0].password;
+
+    const isMatch = await bcrypt.compare(password,hashedPassword);
     if(!isMatch){
         throw new ApiError(
             401,
@@ -252,23 +282,45 @@ const logIn = asyncHandler (async (req, res) => {
         SET refresh_token = $1
         WHERE id = $2
         RETURNING
-            id,
+            id, 
             username,
+            email,
             first_name,
             last_name,
+            phone,
             role;
     `;
     
-    result = await pool.query(query,[refreshToken,user.id]);
+    result = await pool.query(
+        query,
+        [refreshToken,result.rows[0].id]
+    );
+
+    if(result.rowCount === 0){
+        throw new ApiError(
+            400,
+            "Failed to login, please try again"
+        );
+    }
 
     return res
         .status(200)
-        .cookie("accessToken",accessToken,getAccessCookieOptions())
-        .cookie("refreshToken",refreshToken,getRefreshCookieOptions())
+        .cookie(
+            "accessToken",
+            accessToken,
+            getAccessCookieOptions()
+        )
+        .cookie(
+            "refreshToken",
+            refreshToken,
+            getRefreshCookieOptions()
+        )
         .json(
             new ApiResponse(
                 200,
-                {user: result.rows[0]},
+                {
+                    user: result.rows[0]
+                },
                 "User logged in successfully"
             )
         );
@@ -277,7 +329,7 @@ const logIn = asyncHandler (async (req, res) => {
 
 const logOut = asyncHandler (async (req, res) => {
     const user = req.user;
-    const technician = req.technician || "";
+    const technician = req.technician || null;
 
     const client = await pool.connect();
 
@@ -337,12 +389,7 @@ const logOut = asyncHandler (async (req, res) => {
         }
     );
 
-    const cacheKeys = [
-        `auth:user:${user.id}`,
-        `auth:technician:${technician.id}`
-    ].filter(Boolean);
-
-    await deleteMultipleCache(cacheKeys);
+    await invalidateCaches(user.id, technician?.id);
 
     return res
         .status(200)
@@ -429,8 +476,262 @@ const refreshAccessToken = asyncHandler (async (req, res) => {
     }
 });
 
-const forgotPassword = asyncHandler(async (req, res) => { });
-const resetPassword = asyncHandler(async (req, res) => { });
+const forgotPassword = asyncHandler(async (req, res) => {
+    const email = req.body.email?.trim().replace(/"/g, "") || "";
+    const username = req.body.username?.trim() || "";
+    const phone = req.body.phone?.trim()|| "";
+
+    if(!email && !username && !phone){
+        throw new ApiError(
+            400,
+            "Please provide email or username or phone number"
+        );
+    }
+
+    const filter = email || username || phone; 
+
+    const query = `
+        SELECT 
+            id,
+            username,
+            email,
+            phone
+        FROM users
+            WHERE (email = $1
+                    OR username = $1
+                    OR phone = $1
+                )
+                AND deleted_at IS NULL
+                AND deactivated_at IS NULL
+        LIMIT 1; 
+    `;
+        
+    let result = await pool.query(query,[filter]);
+
+    if(result.rowCount === 0){
+        throw new ApiError(
+            401,
+            "Invalid credentials"
+        );
+    }
+
+    const user = result.rows[0];
+
+    const forgotToken = crypto
+        .randomBytes(32)
+        .toString("hex");
+
+    try{
+        await otpQueue.add(
+            "otp:verify:forgot-password",
+            {
+                userId: user.id,
+                username: user.username,
+                phone: user.phone,
+                email: user.email,
+                forgotToken
+            },
+            {
+                jobId: `otp:verify:forgot-password:${forgotToken}`
+            }
+        );
+    }catch(_){
+        throw new ApiError(
+            500,
+            "Failed to send OTP, please try again"
+        );
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    forgotToken
+                },
+                "If account exists, OTP has been sent"
+            )
+        );
+});
+
+const verifyForgotOTP = asyncHandler(async (req, res) => { 
+    const forgotToken = req.body.forgotToken?.trim() || "";
+    const otp = req.body.otp?.trim() || "";
+
+    if(!forgotToken || !otp){
+        throw new ApiError(
+            400,
+            "User ID and OTP are required"
+        );
+    }
+
+    const forgotPasswordOtpKey = 
+        `otp:verify:forgot-password:${forgotToken}`;
+
+    const storedOTP = await getCache(
+        forgotPasswordOtpKey
+    );
+
+    if(!storedOTP){
+        throw new ApiError(
+            400,
+            "OTP expired or invalid"
+        );
+    }
+
+    if(String(storedOTP) !== String(otp)) {
+        throw new ApiError(
+            400,
+            "Invalid OTP"
+        );
+    }
+
+
+    const forgotPasswordUserKey =
+        `forgot-password:user:${forgotToken}`;
+
+    const storedUserData = await getCache(
+        forgotPasswordUserKey
+    );
+
+    if(!storedUserData){
+        throw new ApiError(
+            400,
+            "Reset session expired"
+        );
+    }
+
+     let parsedUser;
+
+    try{
+        parsedUser = JSON.parse(storedUserData);
+    }catch (_){
+        throw new ApiError(
+            500,
+            "Invalid reset session"
+        );
+    }
+
+    await deleteCache(forgotPasswordOtpKey);
+    await deleteCache(forgotPasswordUserKey);
+
+    const resetToken = crypto
+        .randomBytes(32)
+        .toString("hex");
+
+    const resetPasswordKey =
+        `reset-password:${resetToken}`;
+
+    await setCache(
+        resetPasswordKey,
+        parsedUser.userId,
+        180
+    );
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    resetToken
+                },
+                "OTP verified successfully"
+            )
+        );
+});
+
+const resetPassword = asyncHandler(async (req, res) => { 
+    const resetToken = req.body.resetToken?.trim() || "";
+    const newPassword = req.body.newPassword?.trim() || "";
+
+    if(!resetToken || !newPassword){
+        throw new ApiError(
+            400,
+            "All fields are required"
+        );
+    }
+    
+    const resetPasswordKey =
+        `reset-password:${resetToken}`;
+
+    const storedData = await getCache(
+        resetPasswordKey
+    );
+
+    if(!storedData){
+        throw new ApiError(
+            401,
+            "Reset session expired or invalid"
+        );
+    }
+
+    let parsedData;
+
+    try{
+        parsedData = JSON.parse(storedData);
+
+    }catch(_){
+        throw new ApiError(
+            500,
+            "Invalid reset session"
+        );
+    }
+
+    const userId = parsedData.userId;
+
+    const hashedPassword = await hashPassword(newPassword);
+
+    const query = `
+        UPDATE users
+        SET
+            password = $1,
+            refresh_token = NULL
+        WHERE id = $2
+            AND deleted_at IS NULL
+            AND deactivated_at IS NULL;
+    `;
+
+    const result = await pool.query(
+        query,
+        [hashedPassword, userId]
+    );
+
+    if(result.rowCount === 0){
+        throw new ApiError(
+            400,
+            "Password reset failed"
+        );
+    }
+
+    await deleteCache(resetPasswordKey);
+    await invalidateCaches(userId,null);
+
+    try{
+        await emailQueue(
+            "password:reset",
+            {
+                userId
+            },
+            {
+                jobId: `password:reset:${userId}`
+            }
+        );
+
+    }catch(_) {}
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {},
+                "Password reset successful"
+            )
+        );
+
+});
 
 
 export {
@@ -439,6 +740,7 @@ export {
     logOut,
     refreshAccessToken,
     forgotPassword,
+    verifyForgotOTP,
     resetPassword
 };
 

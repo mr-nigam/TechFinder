@@ -2,8 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
-import ApiError from '#utils/apiError';
-import errorHandler from '#middlewares/errorHandler';
+import ApiError from '#shared/utils/apiError.js';
+import errorHandler from '#middlewares/errorHandler.js';
 
 
 const app = express();
@@ -35,7 +35,15 @@ app.use((req, res, next) => {
     next();
 });
 
-import authRouter from '#modules/auth/auth.routes';
+import authRouter from '#auth/auth.routes.js';
+
+import {
+    accountRouter,
+    addressRouter,
+    phoneRouter,
+    profileRouter,
+    securityRouter
+} from '#users/routes/index.js';
 
 
 app.use("/api/v1/auth", authRouter);

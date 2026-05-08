@@ -1,25 +1,4 @@
-
-import pool from '#config/db';
-import ApiError from '#shared/utils/apiError';
-import ApiResponse from '#shared/utils/apiResponse';
-import asyncHandler from '#shared/utils/asyncHandler';
-import removeLocalFile from '#shared/utils/file';
-import cloudinaryQueue from '#utils/cloudinary.jobs';
-
-import {
-    hasEmpty,
-    isValidUUID
-} from '#shared/utils/validation.utils';
-
-import { 
-    uploadOnCloudinary,
-    deleteFromCloudinary,
-} from '#shared/services/storage.service';
-
-import {
-    formatOwnAddress,
-    formatAddressAssets
-} from '#shared/utils/address.utils';
+import pool from '#config/db.js';
 
 import { 
     getCache,
@@ -29,9 +8,33 @@ import {
 } from '#lib/cache';
 
 import {
+    ApiError,
+    ApiResponse,
+    asyncHandler,
+
+    hashPassword,
+    
+    generateAccessToken,
+    generateRefreshToken,
+    getAccessCookieOptions,
+    getRefreshCookieOptions,
+    
+    hasEmpty,
+    isValidPhone,
+    isValidEmail,
+    
+    uploadOnCloudinary,
+    removeLocalFile,
+
+    formatOwnAddress,
+    formatAddressAssets
+} from '#shared';
+
+import {
+    emailQueue,
     addressQueue,
-    emailQueue
-} from '../jobs/address.queue.js';
+    cloudinaryQueue
+} from '#queues';
 
 
 const addAddress = asyncHandler(async (req, res) => {

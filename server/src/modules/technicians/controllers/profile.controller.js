@@ -1,27 +1,27 @@
-import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import pool from '#config/db';
-
-import ApiError from '#shared/utils/apiError';
-import ApiResponse from '#shared/utils/apiResponse';
-import asyncHandler from '#shared/utils/asyncHandler';
-
-import {
-    checkUserDetails,
-    formatTechnicianProfile
-} from '#shared/utils/technician.util';
-
-import { 
-    emailQueue,
-    technicianQueue
-} from '../jobs/technician.queue.js';
+import pool from '#config/db.js';
 
 import { 
     getCache,
     setCache,
     deleteCache,
     deleteMultipleCache
-} from '#lib/cache';
+} from '#lib/cache.js';
+
+import {
+    ApiError,
+    ApiResponse,
+    asyncHandler,
+
+    checkUserDetails,
+    formatTechnicianProfile
+} from '#shared';
+
+import { 
+    emailQueue,
+    technicianQueue
+} from '#queues';
+
 
 const TECHNICIAN_PROFILE_FIELDS = `
     id,
@@ -43,7 +43,6 @@ const TECHNICIAN_PROFILE_FIELDS = `
     total_money_earned,
     created_at
 `;
-
 
 const register = asyncHandler(async (req, res) => {
     const user = req.user;
@@ -538,11 +537,14 @@ const updateCurrentLocation = asyncHandler(async (req, res) =>{
 
 const getReviews = asyncHandler(async (req, res) =>{});
 
+const verifyTechnician = asyncHandler(async (req, res) =>{ });
+
 
 export {
     register,
     getProfile,
     updateProfile,
     deleteAccount,
-    updateCurrentLocation
+    updateCurrentLocation,
+    verifyTechnician
 };

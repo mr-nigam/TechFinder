@@ -27,5 +27,6 @@ const formatMultipleAddress = (address,assets) => ({ });
 export {
     formatOwnAddress,
     formatBookingAddress,
-    formatAddressAssets
+    formatAddressAssets,
+    formatMultipleAddress
 };

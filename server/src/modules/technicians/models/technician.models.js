@@ -1,5 +1,5 @@
-import pool from '#config/db';
-import createUpdatedAtTrigger from '#shared/utils/dbTriggers.util';
+import pool from '#config/db.js';
+import createUpdatedAtTrigger from '#shared/utils/dbTriggers.util.js';
 
 
 const createTechniciansTable = async () => {

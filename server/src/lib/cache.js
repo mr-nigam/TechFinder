@@ -1,4 +1,4 @@
-import redisConnection from '#config/redis';
+import redisConnection from '#config/redis.js';
 
 
 const getCache = async(key) => {
@@ -54,14 +54,15 @@ const deleteMultipleCache = async(keys) => {
 };
 
 const invalidateCaches = async (userId, technicianId) => {
-    const cacheKeys = [
+   const cacheKeys = [
         `profile:user:${userId}`,
-        `profile:technician:${technicianId}`,
-        `dashboard:technician:${technicianId}`,
+        technicianId && `profile:technician:${technicianId}`,
+        technicianId && `dashboard:technician:${technicianId}`,
     ].filter(Boolean);
 
     await deleteMultipleCache(cacheKeys);
 };
+
 
 export {
     getCache,

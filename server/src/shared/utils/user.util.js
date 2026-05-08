@@ -17,4 +17,4 @@ const formatMyProfile = (user) => ({
   totalMoneySave: user.total_money_save,
 });
 
-export default formatOwnUser;
+export default formatMyProfile;

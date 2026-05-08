@@ -25,11 +25,17 @@
     "start": "node src/server.js"
   },
   "imports": {
-    "#shared/*": "./src/shared/*.js",
-    "#config/*": "./src/config/*.js",
-    "#modules/*": "./src/modules/*.js",
-    "#middlewares/*": "./src/middlewares/*.js",
-    "#lib/*": "./src/lib/*.js"
+    "#shared/*": "./src/shared/*",
+    "#config/*": "./src/config/*",
+    "#middlewares/*": "./src/middlewares/*",
+    "#lib/*": "./src/lib/*",
+    "#queues/*": "./src/queues/*",
+
+    "#users/*": "./src/modules/users/*",
+    "#auth/*": "./src/modules/auth/*",
+    "#technicians/*": "./src/modules/technicians/*",
+    "#bookings/*": "./src/modules/bookings/*",
+    "#notifications/*": "./src/modules/notifications/*"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -37,6 +43,7 @@
     "cloudinary": "^2.9.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
+    "crypto": "^1.0.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "ioredis": "^5.10.1",

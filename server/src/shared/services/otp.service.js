@@ -1,6 +1,6 @@
-import client from '#lib/twilioClient';
-import transporter from '#lib/emailTransporter';
-import ApiError from '#shared/utils/apiError';
+import client from '#lib/twilioClient.js';
+import transporter from '#lib/emailTransporter.js';
+import ApiError from '#shared/utils/apiError.js';
 
 
 const generateOtp = (length = 6) => {

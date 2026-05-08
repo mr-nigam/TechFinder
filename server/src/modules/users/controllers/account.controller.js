@@ -1,17 +1,21 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import pool from '#config/db';
+import pool from '#config/db.js';
 
-import ApiError from '#shared/utils/apiError';
-import ApiResponse from '#shared/utils/apiResponse';
-import asyncHandler from '#shared/utils/asyncHandler'
+import {
+    ApiError,
+    ApiResponse,
+    asyncHandler
+} from '#shared';
 
-import accountQueue from '../jobs/account.queue.js';
-import emailQueue from '../jobs/email.queue.js';
+import {
+    emailQueue,
+    accountQueue
+} from '#queues';
 
 import{
     deleteMultipleCache
-} from '#lib/cache';
+} from '#lib/cache.js';
 
 
 // deleted/deactivate associcated technician also

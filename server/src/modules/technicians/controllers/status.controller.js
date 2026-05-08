@@ -1,16 +1,15 @@
-import jwt from 'jsonwebtoken';
-import bcrypt from "bcrypt";
 import pool from '#config/db';
 
-import ApiError from '#shared/utils/apiError';
-import ApiResponse from '#shared/utils/apiResponse';
-import asyncHandler from '#shared/utils/asyncHandler';
-import hashPassword from '#shared/util/password';
+import {
+    ApiError,
+    ApiResponse,
+    asyncHandler
+} from '#shared';
 
 
-const goOnline = asyncHandler(async (req, res) =>{ });
-const goOffline = asyncHandler(async (req, res) =>{ });
-const updateStatus = asyncHandler(async (req, res) =>{ });
+const goOnline = asyncHandler(async (req, res) => { });
+const goOffline = asyncHandler(async (req, res) => { });
+const updateStatus = asyncHandler(async (req, res) => { });
 
 
 export {

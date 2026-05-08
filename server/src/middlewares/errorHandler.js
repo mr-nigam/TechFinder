@@ -1,4 +1,4 @@
-import ApiError from '#utils/apiError';
+import { ApiError } from '#shared';
 
 
 const errorHandler = (err, req, res, next) => {

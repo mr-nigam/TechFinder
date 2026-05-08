@@ -5,12 +5,8 @@ export { default as asyncHandler } from './utils/asyncHandler.js';
 export { default as removeLocalFile } from './utils/file.js';
 
 // password
-export { default as hashPassword } from './util/password.js';
-
-// user utils
-export {
-    formatOwnUser,
-} from './utils/user.utils.js';
+export { default as hashPassword } from './utils/password.util.js';
+export { default as formatMyProfile } from './utils/user.util.js';
 
 // tokens
 export {
@@ -30,7 +26,7 @@ export {
     isValidUUID,
     isValidPhone,
     isValidEmail
-} from './utils/validation.utils.js';
+} from './utils/validation.util.js';
 
 // storage
 export {
@@ -38,15 +34,17 @@ export {
     deleteFromCloudinary,
 } from './services/storage.service.js';
 
-// cache
+// address
 export {
-    getCache,
-    setCache,
-    deleteCache,
-    deleteMultipleCache
-} from '../lib/cache.js';
+    formatOwnAddress,
+    formatBookingAddress,
+    formatAddressAssets,
+    formatMultipleAddress
+} from './utils/address.util.js';
 
-// queues
-export { default as cloudinaryQueue } from '../jobs/cloudinary.jobs.js';
-export { default as emailQueue } from './jobs/email.jobs.js';
-export { default as otpQueue } from './jobs/otp.jobs.js';
+// technician
+export {
+    checkUserDetails,
+    formatTechnicianProfile,
+    formatDocument
+} from './utils/technician.util.js';
