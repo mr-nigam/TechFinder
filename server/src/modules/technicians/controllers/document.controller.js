@@ -4,18 +4,9 @@ import {
     ApiError,
     ApiResponse,
     asyncHandler,
-
-    hashPassword,
-    
-    generateAccessToken,
-    generateRefreshToken,
-    getAccessCookieOptions,
-    getRefreshCookieOptions,
     
     hasEmpty,
     isValidUUID,
-    isValidPhone,
-    isValidEmail,
     
     uploadOnCloudinary,
     removeLocalFile,
@@ -24,10 +15,10 @@ import {
 } from '#shared';
 
 import {
-    cloudinaryQueue,
-    emailQueue,
     otpQueue,
-    technicianQueue
+    emailQueue,
+    cleanupQueue,
+    cloudinaryQueue
 } from '#queues';
 
 
@@ -41,16 +32,10 @@ const uploadDocument = asyncHandler(async (req, res) => {
         );
     }
 
-    let {
-        documentId,
-        documentName,
-        documentType,
-        expiryDate
-    } = req.body;
-
-    documentId = documentId?.trim() || "";
-    documentName = documentName?.trim() || "";
-    documentType = documentType?.trim() || "";
+    const documentId = req.body?.documentId?.trim() || "";
+    const documentName = req.body?.documentName?.trim() || "";
+    const documentType = req.body?.documentType?.trim() || "";
+    const expiryDate = req.body?.expiryDate;
 
     if( !documentName ||
         !documentType
@@ -132,6 +117,23 @@ const uploadDocument = asyncHandler(async (req, res) => {
         
         const uploadedDocument = formatDocument(result.rows[0]);
         
+        try{
+            await emailQueue.add(
+                "document:add",
+                {
+                    technicianId: technician.id,
+                    documentId: uploadedDocument.id
+                },
+                {
+                    jobId: `document:add:${uploadedDocument.id}`
+                }
+            );
+
+            console.log("Document deletion email queued");
+        }catch(err){
+            console.error("Queue error:", err.message);
+        }
+
         return res
             .status(201)
             .json(
@@ -199,8 +201,8 @@ const deleteDocument = asyncHandler(async (req, res) =>{
     }
 
     try{
-        await technicianQueue.add(
-            "delete-document",
+        await cleanupQueue.add(
+            "document:delete",
             {
                 technicianId: technician.id,
                 documentId: docId

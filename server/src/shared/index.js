@@ -8,6 +8,8 @@ export { default as removeLocalFile } from './utils/file.js';
 export { default as hashPassword } from './utils/password.util.js';
 export { default as formatMyProfile } from './utils/user.util.js';
 
+export { default as createUpdatedAtTrigger } from './utils/dbTriggers.util.js';
+
 // tokens
 export {
     generateAccessToken,

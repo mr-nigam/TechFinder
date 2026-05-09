@@ -14,8 +14,7 @@ import {
 } from '#shared';
 
 import {
-    emailQueue,
-    phoneQueue
+    cleanupQueue
 } from '#queues';
 
 
@@ -75,6 +74,7 @@ const addPhone = asyncHandler(async (req, res) => {
         const result = await pool.query( query, values);
 
         addedPhone = result.rows[0];
+
     }catch(err){
         if(err.code === "23505"){
             throw new ApiError(
@@ -87,24 +87,8 @@ const addPhone = asyncHandler(async (req, res) => {
             500,
             "Phone Number addition failed"
         );
-
     }
     
-    try{
-        await emailQueue.add(
-            "phone-added", 
-            { 
-                userId: user.id,
-                phoneId: addedPhone.id
-            },
-            {
-                jobId: `email:phone-added:${addedPhone.id}`
-            }
-        );
-    }catch(err){
-        console.error("Queue error:", err.message);
-    }
-
     return res
         .status(201)
         .json(
@@ -177,34 +161,18 @@ const deletePhone = asyncHandler(async (req, res) => {
     }
 
     try{
-        await phoneQueue.add(
-            "delete-phone",
+        await cleanupQueue.add(
+            "phone:delete",
             { 
-                userId: user.id,
                 phoneId: phoneId,
             },
             {
-                jobId: `delete:phone:${phoneId}`,
-                delay: 1 * 24 * 60 * 60 * 1000
+                jobId: `phone:delete:${phoneId}`,
             }
         );
+
     }catch(err){
         console.error("Queue error:", err.message);       
-    }
-
-    try{
-        await emailQueue.add(
-            "delete-phone", 
-            { 
-                userId: user.id,
-                phoneId: phoneId
-            },
-            { 
-                jobId: `email:deleted:phone:${phoneId}`
-            }
-        );
-    }catch(err){
-        console.error("Queue error:", err.message);
     }
 
     return res

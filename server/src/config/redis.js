@@ -15,7 +15,7 @@ const redisConnection = new Redis({
 });
 
 redisConnection.on("connect",()=>{
-    console.log("✅ Redis Connected");
+    // console.log("✅ Redis Connected");
 });
 
 redisConnection.on("error",(err)=>{

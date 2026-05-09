@@ -127,7 +127,7 @@ const updateProfile = asyncHandler(async (req, res) => {
                 bio = $3,
                 gender = $4,
                 date_of_birth = $5
-            WHERE id = $6;
+            WHERE id = $6
             RETURNING ${USER_PROFILE_FIELDS};
         `;
 
@@ -141,22 +141,23 @@ const updateProfile = asyncHandler(async (req, res) => {
         ];
 
         const result = await pool.query(query,values);
-        const updatedUser = result.rows[0];
 
-        if(!updatedUser){
+        if(result.rowCount === 0){
             throw new ApiError(
                 404,
                 "User not found or not updated"
             );
         }
 
-        const myProfile = formatUserProfile(updatedUser);
+        const myProfile = formatUserProfile(result.rows[0]);
         const cacheKey = `profile:user:${user.id}`;
         
         try{
             await deleteCache(cacheKey);
             await setCache(cacheKey,myProfile,600);
+
         }catch(err){
+            
             console.error("Redis Deletion failed:", err.message);
         }
 

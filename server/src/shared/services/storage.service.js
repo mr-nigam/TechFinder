@@ -1,9 +1,6 @@
 import cloudinary from '#lib/cloudinaryClient.js';
-
-import {
-    ApiError,
-    removeLocalFile
-} from '#shared';
+import ApiError from '../utils/apiError.js';
+import removeLocalFile from '../utils/file.js';
 
 
 const uploadOnCloudinary = async (localFilePath) => {

@@ -1,5 +1,5 @@
 import pool from '#config/db.js';
-import ApiError from '#shared/utils/apiError.js';
+import ApiError from './apiError.js';
 
 
 const checkUserDetails = async (user)=>{

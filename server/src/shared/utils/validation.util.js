@@ -1,3 +1,5 @@
+import ApiError from './apiError.js';
+
 const hasEmpty = (arr = []) => {
     return arr.some((value) => {
         return (
@@ -23,7 +25,7 @@ const isValidUUID = (value) => {
 };
 
 const isValidPhone = (phone) => {
-    const phone = String(phone).trim();
+    phone = String(phone).trim();
 
     // Phone number digits only
     const phoneRegex = /^\+[1-9][0-9]{6,14}$/;

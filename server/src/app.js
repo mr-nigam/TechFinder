@@ -2,8 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
-import ApiError from '#shared/utils/apiError.js';
-import errorHandler from '#middlewares/errorHandler.js';
+import { ApiError } from '#shared';
+import errorHandler from './middlewares/errorHandler.js';
 
 
 const app = express();
@@ -37,13 +37,13 @@ app.use((req, res, next) => {
 
 import authRouter from '#auth/auth.routes.js';
 
-import {
-    accountRouter,
-    addressRouter,
-    phoneRouter,
-    profileRouter,
-    securityRouter
-} from '#users/routes/index.js';
+// import {
+//     accountRouter,
+//     addressRouter,
+//     phoneRouter,
+//     profileRouter,
+//     securityRouter
+// } from '#users/routes/index.js';
 
 
 app.use("/api/v1/auth", authRouter);

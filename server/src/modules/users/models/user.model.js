@@ -97,8 +97,8 @@ const createUsersTable = async() => {
         `);
 
         await pool.query(`
-            CREATE INDEX IF NOT EXISTS idx_users_primary_phone_number
-            ON users(primary_phone_number);
+            CREATE INDEX IF NOT EXISTS idx_users_phone
+            ON users(phone);
         `);
         
         await createUpdatedAtTrigger('users');

@@ -5,7 +5,7 @@ import {
     setCache,
     deleteCache,
     deleteMultipleCache
-} from '#lib/cache';
+} from '#lib/cache.js';
 
 import {
     ApiError,
@@ -20,6 +20,7 @@ import {
     getRefreshCookieOptions,
     
     hasEmpty,
+    isValidUUID,
     isValidPhone,
     isValidEmail,
     
@@ -31,8 +32,7 @@ import {
 } from '#shared';
 
 import {
-    emailQueue,
-    addressQueue,
+    cleanupQueue,
     cloudinaryQueue
 } from '#queues';
 
@@ -87,7 +87,6 @@ const addAddress = asyncHandler(async (req, res) => {
             );
         }
 
-        // remove previous default if is_default is true
         if(is_default){
             const query = `
                 UPDATE addresses
@@ -158,17 +157,6 @@ const addAddress = asyncHandler(async (req, res) => {
         }
         
         client.query("COMMIT");
-
-        try{
-            await emailQueue.add("new-address-added", 
-                { userId: user.id,},
-                {
-                    jobId: `email:address-added:${address.id}`
-                }
-        );
-        }catch(err){
-            console.error("Queue error:", err.message);
-        }
 
         return res
             .status(201)
@@ -351,11 +339,13 @@ const deleteAddress = asyncHandler(async (req, res) => {
         await client.query("COMMIT");
 
         try{
-            await addressQueue.add(
-                "delete-address",
+            await cleanupQueue.add(
+                "address:delete",
+                {
+                    addressId
+                },
                 { 
-                    jobId: `delete:address:${addressId}`,
-                    delay: 1 * 24 * 60 * 60 * 1000 // 1 days in milliseconds
+                    jobId: `delete:address:${addressId}`
                 }
             );
 
@@ -364,19 +354,6 @@ const deleteAddress = asyncHandler(async (req, res) => {
         }catch(err){
             console.error("Queue error:", err.message);
         }
-
-        try{
-            await emailQueue.add(
-                "address-deleted", 
-                { userId: user.id, },
-                {
-                    jobId: `email:address-deleted:${addressId}`
-                }
-        );
-        }catch(err){
-            console.error("Queue error:", err.message);
-        }
-
 
         return res
             .status(200)
@@ -399,10 +376,9 @@ const deleteAddress = asyncHandler(async (req, res) => {
     }finally{
         await client.release();
     }
-
 });
 
-const changeDefaultAddress = asyncHandler(async (req, res) => {
+const setDefault = asyncHandler(async (req, res) => {
     const addressId = req.params?.addressId;
     const user = req.user;
 
@@ -425,25 +401,12 @@ const changeDefaultAddress = asyncHandler(async (req, res) => {
     `;
 
     let result = await pool.query(query, [addressId, userId]);
-    // let address = result.rows[0];
 
     if(result.rowCount === 0){
         throw new ApiError(
             404,
             "Setting default address failed"
         );
-    }
-
-    try{
-        await emailQueue.add(
-            "address-default", 
-            { userId: user.id, },
-            {
-                jobId: `email:address-default:${addressId}`
-            }
-        );
-    }catch(err){
-        console.error("Queue error:", err.message);
     }
 
     return res
@@ -561,11 +524,107 @@ const updateAddress = asyncHandler(async (req, res) => {
     }
 });
 
-const updateAddressLocation = asyncHandler(async (req, res) => { });
+const updateLocation = asyncHandler(async (req, res) => { 
+    const addressId = req.params?.addressId || null;
 
-const addAddressAssets = asyncHandler(async (req, res) => { });
+    if(!addressId){
+        throw new ApiError(
+            400,
+            "Please tell us the address id"
+        );
+    }
 
-const updateAddressAssets = asyncHandler(async (req, res) => { });
+    let {
+        lat,
+        lng,
+        accuracy_meters,
+        source
+    } = req.body;
+
+    if(lat === undefined || lng === undefined){
+        throw new ApiError(
+            400,
+            "Give proper locations coordinates"
+        );
+    }
+
+    lat = Number(lat);
+    lng = Number(lng);
+
+    if(isNaN(lat) ||
+        isNaN(lng) || 
+        lat > 90 ||
+        lat < -90 ||
+        lng > 180 ||
+        lng < - 180
+    ){
+        throw new ApiError(
+            400,
+            "Invalid Lonigitude and Latitude coordinates"
+        );
+    }
+
+    const allowedSources = [
+        "gps",
+        "manual_pin",
+        "geocoded",
+        "admin"
+    ];
+
+    if(!allowedSources.includes(source)){
+        source = "gps";
+    }
+
+    const query = `
+        UPDATE addresses
+        SET location = ST_SetSRID(
+                ST_MakePoint($1, $2), 
+                4326
+            ),
+            location_accuracy_meters = $3,
+            location_source  = $4
+        WHERE id = $5
+        RETURNING 
+            ST_GeoJSON(location) AS location,
+            location_accuracy_meters,
+            location_source;
+    `;
+
+    const values = [
+        lng,
+        lat,
+        accuracy_meters,
+        source,
+        addressId
+    ];
+
+    const result = await pool.query(query,values);
+    
+    if(result.rowCount === 0){
+        throw new ApiError(
+            500,
+            "Failed to update the address location"
+        );
+    }
+
+    const location = result.rows[0];
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                location,
+                "Address location updated successfully"
+            )
+        );
+});
+
+const addAssets = asyncHandler(async (req, res) => { });
+
+const updateAssets = asyncHandler(async (req, res) => { });
+
+const deleteAssets = asyncHandler(async (req, res) => { });
 
 
 export {
@@ -573,9 +632,10 @@ export {
     getAddressById,
     getMyAddresses,
     deleteAddress,
-    changeDefaultAddress,
+    setDefault,
     updateAddress,
-    updateAddressLocation,
-    addAddressAssets,
-    updateAddressAssets
+    updateLocation,
+    addAssets,
+    updateAssets,
+    deleteAssets
 }

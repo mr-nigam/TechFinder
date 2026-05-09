@@ -20,23 +20,27 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "worker": "nodemon src/workers/server.js",
+    "worker": "nodemon src/queues/server.js",
     "all": "concurrently \"npm run dev\" \"npm run worker\"",
     "start": "node src/server.js"
   },
-  "imports": {
-    "#shared/*": "./src/shared/*",
-    "#config/*": "./src/config/*",
-    "#middlewares/*": "./src/middlewares/*",
-    "#lib/*": "./src/lib/*",
-    "#queues/*": "./src/queues/*",
+    "imports": {
+  "#shared": "./src/shared/index.js",
+  "#shared/*": "./src/shared/*",
 
-    "#users/*": "./src/modules/users/*",
-    "#auth/*": "./src/modules/auth/*",
-    "#technicians/*": "./src/modules/technicians/*",
-    "#bookings/*": "./src/modules/bookings/*",
-    "#notifications/*": "./src/modules/notifications/*"
-  },
+  "#config/*": "./src/config/*",
+  "#middlewares/*": "./src/middlewares/*",
+  "#lib/*": "./src/lib/*",
+
+  "#queues": "./src/queues/index.js",
+  "#queues/*": "./src/queues/*",
+
+  "#users/*": "./src/modules/users/*",
+  "#auth/*": "./src/modules/auth/*",
+  "#technicians/*": "./src/modules/technicians/*",
+  "#bookings/*": "./src/modules/bookings/*",
+  "#notifications/*": "./src/modules/notifications/*"
+},
   "dependencies": {
     "bcrypt": "^6.0.0",
     "bullmq": "^5.76.5",

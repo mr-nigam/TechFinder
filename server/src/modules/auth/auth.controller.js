@@ -34,7 +34,7 @@ import {
     cloudinaryQueue,
     emailQueue,
     otpQueue
-} from '#queues';
+} from '#queues/index.js';
 
 
 const register = asyncHandler(async (req, res) => {
@@ -171,12 +171,15 @@ const register = asyncHandler(async (req, res) => {
             await removeLocalFile(localPath);
         }catch(_) {}
 
-
         try{
             await cloudinaryQueue.add(
                 "delete:image", 
-                { public_id: public_id },
-                { jobId: `register:${public_id}`}
+                { 
+                    public_id: public_id 
+                },
+                {
+                    jobId: `register:${public_id}`
+                }
             );
 
         }catch(_) {}
@@ -211,7 +214,7 @@ const register = asyncHandler(async (req, res) => {
         
         throw new ApiError(
             err.statusCode || 500,
-            err.message || "User registration failed"
+            err.message || "User registeration falied"
         );
     }
 });
@@ -239,7 +242,7 @@ const logIn = asyncHandler (async (req, res) => {
     
     const filter = email || username || phone; 
 
-    const query = `
+    let query = `
         SELECT 
             id,
             username,
@@ -259,8 +262,8 @@ const logIn = asyncHandler (async (req, res) => {
 
     if(result.rowCount === 0){
         throw new ApiError(
-            401,
-            "Invalid credentials"
+            404,
+            "User not found"
         );
     }
 
@@ -277,7 +280,7 @@ const logIn = asyncHandler (async (req, res) => {
     const accessToken = generateAccessToken(result.rows[0]);
     const refreshToken = generateRefreshToken(result.rows[0]);
         
-    let query = `
+    query = `
         UPDATE users
         SET refresh_token = $1
         WHERE id = $2
@@ -743,5 +746,3 @@ export {
     verifyForgotOTP,
     resetPassword
 };
-
-

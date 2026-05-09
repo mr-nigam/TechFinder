@@ -19,7 +19,7 @@ import {
 
 import { 
     emailQueue,
-    technicianQueue
+    cleanupQueue
 } from '#queues';
 
 
@@ -393,14 +393,14 @@ const deleteAccount = asyncHandler(async (req, res) =>{
     await deleteMultipleCache(cacheKeys);
 
     try{
-        await technicianQueue.add(
-            "delete-account",
+        await cleanupQueue.add(
+            "technician:delete:account",
             { 
                 userId: user.id,
                 technicianId: technician.id
             },
             { 
-                jobId: `delete:${technician.id}`,
+                jobId: `technician:delete:${technician.id}`,
                 delay: 30 * 24 * 60 * 60 * 1000 // 30 days
             }
         );

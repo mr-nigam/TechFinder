@@ -1,28 +1,24 @@
 import { Worker } from 'bullmq';
 import redisConnection from '#config/redis.js';
-import otpHandlers from './otp.handlers.js';
-
-import { ApiError } from '#shared';
+import cleanupHandlers from './cleanup.handlers';
 
 
 new Worker(
-    "otpQueue",
+    "cleanupQueue",
 
-    async (job) => {
-
+    async(job) => {
         const handler =
-            otpHandlers[job.name];
-
+            cleanupHandlers[job.name];
+        
         if(!handler){
             throw new ApiError(
                 500,
                 `Unknown job: ${job.name}`
             );
         }
-
+        
         await handler(job.data);
     },
-
     {
         connection: redisConnection,
         concurrency: 5

@@ -6,11 +6,11 @@ import {
     getAddressById,
     getMyAddresses,
     deleteAddress,
-    changeDefaultAddress,
+    setDefault,
     updateAddress,
-    updateAddressLocation,
-    addAddressAssets,
-    updateAddressAssets
+    updateLocation,
+    addAssets,
+    updateAssets
 } from '../controllers/address.controller.js';
 
 
@@ -29,13 +29,13 @@ router.route("/:addressId")
     .patch(updateAddress)
     .delete(deleteAddress);
 
-router.patch("/:addressId/default", changeDefaultAddress);
+router.patch("/:addressId/default", setDefault);
 
-router.patch("/:addressId/location", updateAddressLocation);
+router.patch("/:addressId/location", updateLocation);
 
-router.post("/:addressId/assets", addAddressAssets);
+router.post("/:addressId/assets", addAssets);
 
-router.patch("/:addressId/assets", updateAddressAssets);
+router.patch("/:addressId/assets", updateAssets);
 
 
 export default router;
