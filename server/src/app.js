@@ -37,16 +37,17 @@ app.use((req, res, next) => {
 
 import authRouter from '#auth/auth.routes.js';
 
-// import {
-//     accountRouter,
-//     addressRouter,
-//     phoneRouter,
-//     profileRouter,
-//     securityRouter
-// } from '#users/routes/index.js';
+import {
+    accountRouter,
+    addressRouter,
+    phoneRouter,
+    profileRouter,
+    securityRouter
+} from '#users/routes/index.js';
 
 
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/security", securityRouter);
 
 
 app.use((req,res,next)=>{

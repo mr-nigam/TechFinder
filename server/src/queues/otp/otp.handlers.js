@@ -1,28 +1,28 @@
-import forgotPasswordHandler
-from './handlers/forgotPassword.handler.js';
+import login
+from './handlers/login.handler.js';
 
-import verifyEmailHandler
-from './handlers/verifyEmail.handler.js';
+import verifyEmail
+from './handlers/verify-email.handler.js';
 
-import verifyPhoneHandler
-from './handlers/verifyPhone.handler.js';
+import verifyPhone
+from './handlers/verify-phone.handler.js';
 
-import loginOTPHandler
-from './handlers/loginOTP.handler.js';
+import forgotPassword
+from './handlers/forgot-password.handler.js';
 
 
 const otpHandlers = {
-    "otp:verify:forgot-password":
-        forgotPasswordHandler,
+    "login":
+        login,
 
-    "otp:verify:phone":
-        verifyPhoneHandler,
+    "phone":
+        verifyPhone,
 
-    "otp:verify:email":
-        verifyEmailHandler,
+    "email":
+        verifyEmail,
 
-    "otp:verify:login":
-        loginOTPHandler,
+    "forgot-password":
+        forgotPassword
 };
 
 

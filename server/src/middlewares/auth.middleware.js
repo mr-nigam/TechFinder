@@ -15,7 +15,8 @@ const verifyJWT = asyncHandler(async (req, _, next) => {
         req?.cookies?.accessToken ||
         (authHeader?.startsWith("Bearer ")
             ? authHeader.split(" ")[1]
-            : null);
+            : null
+        );
 
     if(!token){
         throw new ApiError(
@@ -44,15 +45,19 @@ const verifyJWT = asyncHandler(async (req, _, next) => {
             to_jsonb(users)
             - 'password'
             - 'refresh_token' AS user
-        WHERE id = $1
         FROM users
+        WHERE id = $1
             AND deleted_at IS NULL
             AND deactivated_at IS NULL
-            AND status = 'active';
+            AND status = 'active'
+        LIMIT 1;
     `;
 
-    let result = await pool.query(query,[decodedToken?.id]);
-    const user =  result.rows[0];
+    let result = await pool.query(
+        query,
+        [decodedToken?.id]
+    );
+    const user =  result.rows[0]?.user;
     
     if(!user){
         throw new ApiError(

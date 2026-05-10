@@ -35,8 +35,7 @@ import {
 } from '#queues';
 
 
-
-const changePassword = asyncHandler(async (req, res) => {
+const resetPassword = asyncHandler(async (req, res) => {
     const user = req.user;
 
     const{oldPassword, newPassword} = req.body;
@@ -120,6 +119,21 @@ const changePassword = asyncHandler(async (req, res) => {
         req.technician?.id || null
     );
 
+    try{
+        await emailQueue.add(
+            "password-reset",
+            { 
+                userId: user.id
+            },
+            {
+                jobId: `password-reset:${user.id}`
+            }
+        );
+        console.log("Password Reset");
+    }catch(err){
+        console.error("Queue error:", err.message);
+    }
+
     return res
         .status(200)
         .cookie(
@@ -144,12 +158,21 @@ const changePassword = asyncHandler(async (req, res) => {
 
 const changeEmail = asyncHandler(async (req, res) => { 
     const user = req.user;
-    const email = req.body?.email?.trim() || "";
+    const newEmail = req.body?.email?.trim() || "";
     
-    if(!email || !isValidEmail(email)){
+    if(!newEmail || !isValidEmail(newEmail)){
         throw new ApiError(
             400,
             "Please enter email address"
+        );
+    }
+    
+    const oldEmail = user.email; 
+    
+    if(oldEmail === newEmail){
+        throw new ApiError(
+            400,
+            "New email must be different"
         );
     }
 
@@ -167,7 +190,10 @@ const changeEmail = asyncHandler(async (req, res) => {
                 is_email_verified;
         `;
 
-        result = await pool.query(query,[email,user.id]);
+        result = await pool.query(
+            query,
+            [newEmail,user.id]
+        );
 
         if(result.rowCount === 0){
             throw new ApiError(
@@ -195,6 +221,22 @@ const changeEmail = asyncHandler(async (req, res) => {
         user.id,
         req.technician?.id || null
     );
+
+    try{
+        await emailQueue.add(
+            "email-changed",
+            { 
+                userId: user.id,
+                oldEmail: oldEmail
+            },
+            {
+                jobId: `email-changed:${user.id}`
+            }
+        );
+        console.log("Email Changed");
+    }catch(err){
+        console.error("Queue error:", err.message);
+    }
 
     return res
         .status(200)
@@ -317,12 +359,21 @@ const verifyEmail = asyncHandler(async (req, res) => {
 
 const changePhone = asyncHandler(async (req, res) => { 
     const user = req.user;
-    const phone = req.body?.phone?.trim() || "";
+    const newPhone = req.body?.phone?.trim() || "";
     
-    if(!phone || !isValidPhone(phone)){
+    if(!newPhone || !isValidPhone(newPhone)){
         throw new ApiError(
             400,
             "Please enter phone number"
+        );
+    }
+
+    const oldPhone = user.phone; 
+    
+    if(oldPhone === newPhone){
+        throw new ApiError(
+            400,
+            "New phone number must be different"
         );
     }
 
@@ -340,7 +391,10 @@ const changePhone = asyncHandler(async (req, res) => {
                 is_phone_verified;
         `;
 
-        result = await pool.query(query,[phone,user.id]);
+        result = await pool.query(
+            query,
+            [newPhone,user.id]
+        );
 
         if(result.rowCount === 0){
             throw new ApiError(
@@ -368,6 +422,23 @@ const changePhone = asyncHandler(async (req, res) => {
         req.technician?.id || null
     );
 
+    try{
+        await emailQueue.add(
+            "phone-changed",
+            { 
+                userId: user.id,
+                oldPhone: oldPhone
+            },
+            {
+                jobId: `phone-changed:${user.id}`
+            }
+        );
+
+        console.log("Phone Changed");
+    }catch(err){
+        console.error("Queue error:", err.message);
+    }
+    
     return res
         .status(200)
         .json(
@@ -377,7 +448,6 @@ const changePhone = asyncHandler(async (req, res) => {
                 "Primary phone number updated successfully"
             )
         );
-
 });
 
 const sendPhoneOtp = asyncHandler(async (req, res) => {
@@ -491,7 +561,7 @@ const verifyPhone = asyncHandler(async (req, res) => {
 
 
 export {
-    changePassword,
+    resetPassword,
     changeEmail,
     sendEmailOtp,
     verifyEmail,

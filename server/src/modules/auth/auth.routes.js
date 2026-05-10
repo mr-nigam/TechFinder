@@ -23,7 +23,7 @@ router.post(
     register
 );
 
-router.post("/login ", logIn);
+router.post("/login", logIn);
 
 router.post(
     "/refresh-token",

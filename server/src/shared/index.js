@@ -8,6 +8,7 @@ export { default as removeLocalFile } from './utils/file.js';
 export { default as hashPassword } from './utils/password.util.js';
 export { default as formatMyProfile } from './utils/user.util.js';
 
+// DB triggers
 export { default as createUpdatedAtTrigger } from './utils/dbTriggers.util.js';
 
 // tokens
@@ -50,3 +51,5 @@ export {
     formatTechnicianProfile,
     formatDocument
 } from './utils/technician.util.js';
+
+export {default as generateOtp} from './utils/generateOtp.util.js';

@@ -2,8 +2,8 @@ import { Queue } from 'bullmq';
 import redisConnection from '#config/redis.js';
 
 
-const emailQueue = new Queue(
-    "emailQueue",
+const notificationQueue = new Queue(
+    "notificationQueue",
     {
         connection: redisConnection,
         defaultJobOptions: {
@@ -19,4 +19,26 @@ const emailQueue = new Queue(
 );
 
 
-export default emailQueue;
+export default notificationQueue;
+
+
+
+
+
+/*
+booking-confirmed
+booking-cancelled
+new-booking
+payment-success
+technician-approved
+promotion
+security-alert
+
+delete-expired-notifications
+
+metadata: {
+    bookingId,
+    technicianId,
+    serviceId
+}
+*/  

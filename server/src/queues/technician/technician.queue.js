@@ -16,6 +16,4 @@ const technicianQueue = new Queue("deleteQueue",{
 });
 
 
-export { 
-    technicianQueue
-};
+export  default technicianQueue;

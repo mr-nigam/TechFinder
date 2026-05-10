@@ -34,7 +34,7 @@ import {
     cloudinaryQueue,
     emailQueue,
     otpQueue
-} from '#queues/index.js';
+} from '#queues';
 
 
 const register = asyncHandler(async (req, res) => {
@@ -146,12 +146,16 @@ const register = asyncHandler(async (req, res) => {
         }
 
         try{
-            await emailQueue.add("sendWelcomeEmail", 
-                { userId: user.id},
+            await emailQueue.add(
+                "welcome", 
+                { 
+                    userId: user.id
+                },
                 {
-                    jobId: `register:${user.id}`,
+                    jobId: `welcome:${user.id}`,
                 }
             );
+            
         }catch(err){
             console.error("Queue error:", err.message);
         }
@@ -423,7 +427,14 @@ const refreshAccessToken = asyncHandler (async (req, res) => {
         );
         
         let query = `
-            SELECT *
+            SELECT
+                id, 
+                username,
+                email,
+                first_name,
+                last_name,
+                phone,
+                role
             FROM users
             WHERE id = $1
                 AND refresh_token = $2
@@ -466,7 +477,9 @@ const refreshAccessToken = asyncHandler (async (req, res) => {
             .json(
                 new ApiResponse(
                     200,
-                    {user: formatOwnUser(user)},
+                    {
+                        user: user
+                    },
                     "Access token refreshed successfully"
                 )
             );
@@ -496,7 +509,8 @@ const forgotPassword = asyncHandler(async (req, res) => {
     const query = `
         SELECT 
             id,
-            username,
+            first_name,
+            last_name,
             email,
             phone
         FROM users
@@ -509,13 +523,21 @@ const forgotPassword = asyncHandler(async (req, res) => {
         LIMIT 1; 
     `;
         
-    let result = await pool.query(query,[filter]);
+    let result = await pool.query(
+        query,
+        [filter]
+    );
 
     if(result.rowCount === 0){
-        throw new ApiError(
-            401,
-            "Invalid credentials"
-        );
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    {},
+                    "If account exists, OTP has been sent"
+                )
+            );
     }
 
     const user = result.rows[0];
@@ -526,24 +548,39 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
     try{
         await otpQueue.add(
-            "otp:verify:forgot-password",
+            "forgot-password",
             {
                 userId: user.id,
-                username: user.username,
+                first_name: user.first_name,
+                last_name: user.last_name,
                 phone: user.phone,
                 email: user.email,
                 forgotToken
             },
             {
-                jobId: `otp:verify:forgot-password:${forgotToken}`
+                jobId: `forgot-password:${forgotToken}`
             }
         );
+
     }catch(_){
         throw new ApiError(
             500,
             "Failed to send OTP, please try again"
         );
     }
+
+    const userId = user.id;
+
+    const forgotPasswordUserDataKey =
+        `forgot-password:user:data:${forgotToken}`;
+
+    await setCache(
+        forgotPasswordUserDataKey,
+        {
+            userId
+        },
+        180
+    );
 
     return res
         .status(200)
@@ -570,7 +607,7 @@ const verifyForgotOTP = asyncHandler(async (req, res) => {
     }
 
     const forgotPasswordOtpKey = 
-        `otp:verify:forgot-password:${forgotToken}`;
+        `forgot-password:${forgotToken}`;
 
     const storedOTP = await getCache(
         forgotPasswordOtpKey
@@ -591,33 +628,22 @@ const verifyForgotOTP = asyncHandler(async (req, res) => {
     }
 
 
-    const forgotPasswordUserKey =
-        `forgot-password:user:${forgotToken}`;
+    const forgotPasswordUserDataKey =
+        `forgot-password:user:data:${forgotToken}`;
 
-    const storedUserData = await getCache(
-        forgotPasswordUserKey
+    const storedData = await getCache(
+        forgotPasswordUserDataKey
     );
 
-    if(!storedUserData){
+    if(!storedData){
         throw new ApiError(
             400,
             "Reset session expired"
         );
     }
 
-     let parsedUser;
-
-    try{
-        parsedUser = JSON.parse(storedUserData);
-    }catch (_){
-        throw new ApiError(
-            500,
-            "Invalid reset session"
-        );
-    }
-
     await deleteCache(forgotPasswordOtpKey);
-    await deleteCache(forgotPasswordUserKey);
+    await deleteCache(forgotPasswordUserDataKey);
 
     const resetToken = crypto
         .randomBytes(32)
@@ -626,9 +652,13 @@ const verifyForgotOTP = asyncHandler(async (req, res) => {
     const resetPasswordKey =
         `reset-password:${resetToken}`;
 
+    const userId = storedData.userId;
+
     await setCache(
         resetPasswordKey,
-        parsedUser.userId,
+        {
+            userId
+        },
         180
     );
 
@@ -670,19 +700,7 @@ const resetPassword = asyncHandler(async (req, res) => {
         );
     }
 
-    let parsedData;
-
-    try{
-        parsedData = JSON.parse(storedData);
-
-    }catch(_){
-        throw new ApiError(
-            500,
-            "Invalid reset session"
-        );
-    }
-
-    const userId = parsedData.userId;
+    const userId = storedData.userId;
 
     const hashedPassword = await hashPassword(newPassword);
 
@@ -712,13 +730,13 @@ const resetPassword = asyncHandler(async (req, res) => {
     await invalidateCaches(userId,null);
 
     try{
-        await emailQueue(
-            "password:reset",
+        await emailQueue.add(
+            "password-reset",
             {
                 userId
             },
             {
-                jobId: `password:reset:${userId}`
+                jobId: `password-reset:${userId}`
             }
         );
 
@@ -730,7 +748,7 @@ const resetPassword = asyncHandler(async (req, res) => {
             new ApiResponse(
                 200,
                 {},
-                "Password reset successful"
+                "Password reset successfully"
             )
         );
 

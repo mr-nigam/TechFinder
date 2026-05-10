@@ -6,6 +6,6 @@ export { default as cleanupQueue } from './cleanup/cleanup.queue.js';
 
 export { default as otpQueue } from './otp/otp.queue.js';
 
-export { 
-    technicianQueue  
-} from './technicians/technicians.queue.js';
+export { default as notificationQueue } from './notification/notification.queue.js';
+
+export { default as technicianQueue } from './technician/technician.queue.js';

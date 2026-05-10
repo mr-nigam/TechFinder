@@ -89,7 +89,7 @@ const createTechniciansTable = async () => {
         average_rating DESC,
         total_jobs_completed DESC
       )
-      WHERE is_verified = TRUE
+      WHERE verified_at IS NOT NULL
         AND status = 'online'
         AND deleted_at IS NULL
         AND deactivated_at IS NULL;

@@ -3,6 +3,7 @@ import createUsersTable from '#users/models/user.model.js';
 import createAddressTable from '#users/models/address.model.js';
 import createAddressesAssetsTable from '#users/models/addressAsset.model.js';
 import createPhonesTable from '#users/models/phone.model.js';
+import createTechniciansTable from '#technicians/models/technician.models.js';
 
 
 const initDB = async () => {

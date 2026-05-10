@@ -2,7 +2,7 @@ import { Router } from 'express';
 import verifyJWT from '#middlewares/auth.middleware.js';
 
 import {
-    changePassword,
+    resetPassword,
     changeEmail,
     sendEmailOtp,
     verifyEmail,
@@ -18,7 +18,7 @@ const router = Router();
 router.use(verifyJWT);
 
 
-router.patch("/password", changePassword);
+router.patch("/password", resetPassword);
 
 router.patch("/email",changeEmail);
 
