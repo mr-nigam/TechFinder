@@ -1,12 +1,10 @@
-const forgotMessageTemplate = (data, otp) => {
-    const fullName = `${data.first_name} ${data.last_name}`;
-
+const forgotMessageTemplate = (usernme, otp) => {
     return {
         email: {
             subject: 'Reset Your TechFinder Password',
 
             text: `
-                Hello ${fullName},
+                Hello ${usernme},
 
                 We received a request to reset your TechFinder account password.
 
@@ -24,7 +22,7 @@ const forgotMessageTemplate = (data, otp) => {
 
             html: `
                 <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-                    <h2>Hello ${fullName},</h2>
+                    <h2>Hello ${usernme},</h2>
 
                     <p>
                         We received a request to reset your

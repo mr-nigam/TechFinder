@@ -7,7 +7,6 @@ import {
     invalidateCaches
 } from '#lib/cache';
 
-
 import {
     ApiError,
     ApiResponse,
@@ -263,13 +262,14 @@ const sendEmailOtp = asyncHandler(async (req, res) => {
 
     try{
         await otpQueue.add(
-            "otp:verify:email",
+            "verify:email",
             {
                 userId: user.id,
+                username: user.username,
                 email: email,
             },
             {
-                jobId: `otp:verify:email:${user.id}`
+                jobId: `verify:email:${user.id}`
             }
         );
         
@@ -286,6 +286,7 @@ const sendEmailOtp = asyncHandler(async (req, res) => {
             );
 
     }catch(err){
+
         console.error("Queue error:", err.message);
 
         throw new ApiError(
@@ -453,39 +454,26 @@ const changePhone = asyncHandler(async (req, res) => {
 const sendPhoneOtp = asyncHandler(async (req, res) => {
     const user = req.user;
     
-    if(user.is_phone_verified) {
+    if(user.is_phone_verified){
         throw new ApiError(
             400,
             "Phone number already verified"
         );
     }
 
-    const phone = user?.phone?.trim() || "";
-
-
     try{
         await otpQueue.add(
-            "otp:verify:phone",
+            "verify:phone",
             {
                 userId: user.id,
-                phone: phone,
+                phone: user.phone
             },
             {
-                jobId: `otp:verify:phone:${user.id}`
+                jobId: `verify:phone:${user.id}`
             }
         );
         
         console.log("OTP job enqueued successfully");
-
-        return res
-            .status(200)
-            .json(
-                new ApiResponse(
-                    200,
-                    {},
-                    "OTP sent successfully"
-                )
-            );
 
     }catch(err){
         console.error("Queue error:", err.message);
@@ -495,11 +483,20 @@ const sendPhoneOtp = asyncHandler(async (req, res) => {
             "Failed to send OTP"
         );
     }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {},
+                "OTP sent successfully"
+            )
+        );
 });
 
 const verifyPhone = asyncHandler(async (req, res) => { 
     const user = req.user;
-    
     const otp = req.body?.otp?.trim() || "";
 
     if(!otp){
@@ -509,9 +506,9 @@ const verifyPhone = asyncHandler(async (req, res) => {
         );
     }
 
-    const phoneOtpKey = `otp:verify:phone:${user.id}`;
+    const verifyPhoneKey = `verify:phone:${user.id}`;
 
-    const storedOtp = await getCache(phoneOtpKey);
+    const storedOtp = await getCache(verifyPhoneKey);
     
     let message = "Wrong OTP, please enter OTP again.";
 
@@ -526,13 +523,17 @@ const verifyPhone = asyncHandler(async (req, res) => {
             UPDATE users
             SET is_phone_verified = TRUE
             WHERE id = $1
+                AND deleted_at IS NULL
             RETURNING
                 id,
                 phone,
                 is_phone_verified;
         `;
 
-        const result = await pool.query(query,[user.id]);
+        const result = await pool.query(
+            query,
+            [user.id]
+        );
 
         if(result.rowCount === 0){
             throw new ApiError(
@@ -545,7 +546,7 @@ const verifyPhone = asyncHandler(async (req, res) => {
         
         message = "Primary phone number verified successfully";
         
-        await deleteCache(phoneOtpKey);
+        await deleteCache(verifyPhoneKey);
     }
 
     return res

@@ -15,10 +15,10 @@ const otpHandlers = {
     "login":
         login,
 
-    "phone":
+    "verify:phone":
         verifyPhone,
 
-    "email":
+    "verify:email":
         verifyEmail,
 
     "forgot-password":

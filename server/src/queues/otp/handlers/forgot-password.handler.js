@@ -20,7 +20,7 @@ const forgotPassword = async(data) =>{
     const otp = generateOtp();
 
     const message = 
-        forgotMessageTemplate(data, otp);
+        forgotMessageTemplate(data.username, otp);
     
     
     await Promise.allSettled([
@@ -39,4 +39,4 @@ const forgotPassword = async(data) =>{
 };
 
 
-export default forgotPassword
+export default forgotPassword;
