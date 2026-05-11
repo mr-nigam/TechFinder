@@ -1,8 +1,20 @@
 import pool from '#config/db.js';
 
 
-const deletePhone = async (userId) => {
+const deletePhone = async (phoneId) => {
+    let query = `
+        DELETE FROM phones
+        WHERE id = $1;
+    `;
 
+    let result = await pool.query(
+        query,
+        [phoneId]
+    );
+
+    if(result.rowCount === 0){
+        throw new Error("Failed to delete phone number")
+    }
 };
 
 

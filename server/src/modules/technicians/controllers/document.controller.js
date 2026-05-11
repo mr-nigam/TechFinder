@@ -77,8 +77,9 @@ const uploadDocument = asyncHandler(async (req, res) => {
             500,
             "Failed to upload document on cloudinary"
         );
+    
     }
-
+    let public_id = uploadedDoc.public_id;
     try{
         let query = `
             INSERT INTO technician_documents(
@@ -98,12 +99,12 @@ const uploadDocument = asyncHandler(async (req, res) => {
         const values = [
             technician.id,
             documentId,
-            documentname,
-            documenttype,
+            documentName,
+            documentType,
             mime_type,
             uploadedDoc.public_id,
             uploadedDoc.secure_url,
-            expiry_date || null,
+            expiryDate || null,
         ];
 
         let result = await pool.query(query,values);
@@ -145,6 +146,23 @@ const uploadDocument = asyncHandler(async (req, res) => {
             );
 
     }catch(err){
+        try{
+            await cloudinaryQueue.add(
+                "document:delete",
+                {
+                    public_id: public_id,
+                    resourceType: "raw"
+                },
+                {
+                    jobId: `document:delete:${public_id}`
+                }
+            );
+            
+            console.log("Document deletion is enqueued");
+        }catch(err){
+            console.error("Queue error:", err.message);
+        }
+    
          try{
             await deleteFromCloudinary(
                 uploadedFile.public_id
@@ -191,7 +209,10 @@ const deleteDocument = asyncHandler(async (req, res) =>{
             AND deleted_at IS NULL;
     `;
 
-    let result = await pool.query(query,[docId, technician.id]);
+    let result = await pool.query(
+        query,
+        [docId, technician.id]
+    );
 
     if(result.rowCount === 0){
         throw new ApiError(
@@ -219,13 +240,13 @@ const deleteDocument = asyncHandler(async (req, res) =>{
 
     try{
         await emailQueue.add(
-            "delete-document",
+            "delete:document",
             {
                 technicianId: technician.id,
                 documentId: documentcId
             },
             {
-                jobId: `document:deleted:email:${documentcId}`
+                jobId: `document:deleted:${documentcId}`
             }
         );
 

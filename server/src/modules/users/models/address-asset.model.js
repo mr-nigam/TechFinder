@@ -3,7 +3,7 @@ import createUpdatedAtTrigger from '#shared/utils/dbTriggers.util.js';
 
 
 const createAddressesAssetsTable = async () => {
-    try {
+    try{
         await pool.query(`
             CREATE TABLE IF NOT EXISTS address_assets(
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -11,7 +11,7 @@ const createAddressesAssetsTable = async () => {
                 address_id  UUID NOT NULL 
                     REFERENCES addresses(id) ON DELETE CASCADE,
 
-                asset_type VARCHAR(20) NOT NULL
+                asset_category VARCHAR(20) NOT NULL
                     CHECK (asset_type IN (
                         'entrance_photo',
                         'building_photo',
@@ -19,7 +19,13 @@ const createAddressesAssetsTable = async () => {
                         'videos',
                         'others'
                     )),
-        
+
+                media_type VARCHAR(20) NOT NULL
+                    CHECK(asset_type IN (
+                        'image',
+                        'video'
+                    )),
+
                 public_id TEXT UNIQUE NOT NULL,
                 asset_url TEXT NOT NULL
                     CHECK (asset_url ~ '^https?://'),

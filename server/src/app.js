@@ -36,6 +36,7 @@ app.use((req, res, next) => {
 });
 
 import authRouter from '#auth/auth.routes.js';
+import reviewRouter from '#modules/reviews/review.routes.js';
 
 import {
     accountRouter,

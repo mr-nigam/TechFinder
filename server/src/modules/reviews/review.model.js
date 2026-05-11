@@ -21,6 +21,14 @@ const createReviewsTable = async() => {
                     REFERENCES bookings(id),
                 
                 service_type_id UUID NOT NULL,
+                    REFERENCES service_types(id)
+                    ON DELETE CASCADE,
+                
+                service_type_name 
+                    VARCHAR(120) NOT NULL,
+
+                service_name 
+                    VARCHAR(20) NOT NULL,
 
                 booking_type VARCHAR(20) NOT NULL
                     DEFAULT 'instant'
@@ -42,13 +50,6 @@ const createReviewsTable = async() => {
                 body TEXT,
 
                 is_edited BOOLEAN DEFAULT FALSE,
-
-                reviewer_type  VARCHAR(15) DEFAULT 'user'
-                    CHECK (
-                        posted_by IN(
-                        'user',
-                        'technician'
-                    )),
                 
                 deleted_at TIMESTAMPTZ,
 
@@ -60,7 +61,7 @@ const createReviewsTable = async() => {
                     OR body IS NOT NULL
                 ),
 
-                UNIQUE(booking_id,posted_by)
+                UNIQUE(booking_id, user_id)
             );
         `);
             
@@ -82,7 +83,7 @@ const createReviewsTable = async() => {
             WHERE deleted_at IS NULL;
         `);
 
-        await createUpdatedAtTrigger('reviews');
+        await createUpdatedAtTrigger("reviews");
 
         console.log("Reviews table and indexes created successfully");
 

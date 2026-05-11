@@ -51,6 +51,7 @@ const createBookingsTable = async () => {
                         )
                     ),            
                 
+                service_type_name VARCHAR(120) NOT NULL,
                 service_name VARCHAR(120) NOT NULL,
 
                 customer_note TEXT

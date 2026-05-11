@@ -535,8 +535,6 @@ const updateCurrentLocation = asyncHandler(async (req, res) =>{
         );
 });
 
-const getReviews = asyncHandler(async (req, res) =>{});
-
 const verifyTechnician = asyncHandler(async (req, res) =>{ });
 
 

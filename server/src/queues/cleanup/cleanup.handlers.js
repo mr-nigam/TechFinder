@@ -1,5 +1,8 @@
-import deleteAccount
-from './handlers/account.handler.js';
+import deleteUser
+from './handlers/user.handler.js';
+
+import deleteTechnician
+from './handlers/technician.handlers.js';
 
 import deleteAddress
 from './handlers/address.handler.js';
@@ -7,16 +10,19 @@ from './handlers/address.handler.js';
 import deletePhone
 from './handlers/phone.handler.js';
 
+import deleteDocument
+from './handlers/document.handlers.js';
+
 
 const cleanupHandlers = {
-    "user:delete:account": 
-        deleteAccount,
+    "user:delete:":
+        deleteUser,
     
-    "technician:delete:account": 
-        deleteAccount,
+    "user:deactivate": 
+        deleteUser,
     
-    "user:deactivate:account": 
-        deleteAccount,
+    "technician:delete": 
+        deleteTechnician,
 
     "phone:delete":
         deletePhone,
@@ -25,7 +31,7 @@ const cleanupHandlers = {
         deleteAddress,
 
     "document:delete":
-        deleteAddress
+        deleteDocument
 };
 
 

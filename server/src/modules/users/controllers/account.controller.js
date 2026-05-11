@@ -117,7 +117,7 @@ const deleteAccount = asyncHandler(async (req, res) => {
     try{
         await cleanupQueue.add(
             "user:delete:account",
-            { 
+            {
                 userId: user.id 
             },
             {   
@@ -132,12 +132,12 @@ const deleteAccount = asyncHandler(async (req, res) => {
     
     try{
         await emailQueue.add(
-            "request:delete:account",
+            "request:user:delete",
             { 
                 userId: user.id
             },
             {
-                jobId: `user:delete:${user.id}`
+                jobId: `request:user:delete:${user.id}`
             }
         );
         console.log("Email will be sent for Account deactivation/deletion in 90 days.");

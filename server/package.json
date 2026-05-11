@@ -35,6 +35,7 @@
   "#queues": "./src/queues/index.js",
   "#queues/*": "./src/queues/*",
 
+  "#modules/*":"./src/modules/*",
   "#users/*": "./src/modules/users/*",
   "#auth/*": "./src/modules/auth/*",
   "#technicians/*": "./src/modules/technicians/*",

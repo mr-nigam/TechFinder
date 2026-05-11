@@ -179,10 +179,11 @@ const register = asyncHandler(async (req, res) => {
             await cloudinaryQueue.add(
                 "delete:image", 
                 { 
-                    public_id: public_id 
+                    public_id: public_id,
+                    resourceType: "image"
                 },
                 {
-                    jobId: `register:${public_id}`
+                    jobId: `delete:image:${public_id}`
                 }
             );
 
