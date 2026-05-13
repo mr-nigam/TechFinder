@@ -103,14 +103,14 @@ const deleteUser = async (userId) => {
 
     queueResults = await Promise.allSettled(
         documentFiles.map( (file) =>
-            cloudinaryQueue.add(
-                "document:delete",
+            cleanupQueue.add(
+                "cloudinary:files:delete",
                 {
                     public_id: file.public_id,
                     resourceType: "raw"
                 },
                 {
-                    jobId: `document:delete:${file.public_id}`
+                    jobId: `cloudinary:files:delete:${file.public_id}`
                 }
             )
         )

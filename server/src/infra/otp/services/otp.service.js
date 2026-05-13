@@ -12,9 +12,8 @@ const sendPhoneOtp = async (data, sms)=>{
 
         return true;
     }catch(error){
-        // console.error('Twilio error:', error.message);
         throw new Error(
-             `Failed to send OTP on phone: ${err.message}`
+            `Failed to send OTP on phone: ${err.message}`
         );
     }
 };
@@ -32,7 +31,6 @@ const sendEmailOtp = async (data, message) => {
         return true;
 
     }catch(err){
-        // console.error('Transporter error:', error.message);
         throw new Error(
             `Failed to send OTP on email: ${err.message}`
         );

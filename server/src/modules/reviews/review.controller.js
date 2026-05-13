@@ -6,7 +6,8 @@ import {
     ApiResponse,
     asyncHandler,
 
-    isValidUUID
+    isValidUUID,
+    validateReviewData
 } from '#shared';
 
 
@@ -66,30 +67,7 @@ const createReview = asyncHandler(async (req,res) => {
     const bookingData = result.rows[0];
 
     try{
-        let {rating = 0, title, body} = req.body;
-        
-        rating = Number(rating.toFixed(1));
-
-        if(
-            isNaN(rating) ||
-            rating <= 0 ||
-            rating > 5
-        ){
-            throw new ApiError(
-                400,
-                "Rating must be in between 0 and 5"
-            );
-        }
-        
-        title = title?.trim() || "";
-        body = body?.trim() || "";
-
-        if(!title && !body){
-            throw new ApiError(
-                400,
-                "Write something in review"
-            );
-        }
+        const { rating, title, body } = validateReviewData(req.body);
 
         const query = `
             INSERT INTO reviews(
@@ -180,30 +158,7 @@ const updateReview = asyncHandler(async (req,res) => {
         );
     }
 
-    let { rating, title, body } = req.body;
-
-    rating = Number(rating.toFixed(1));
-
-    if(
-        isNaN(rating) ||
-        rating <= 0 ||
-        rating > 5
-    ){
-        throw new ApiError(
-            400,
-            "Rating must be in between 0 and 5"
-        );
-    }
-
-    title = title?.trim() || "";
-    body = body?.trim() || "";
-
-    if(!title && !body){
-        throw new ApiError(
-            400,
-            "Write something in review"
-        );
-    }
+    const { rating, title, body } = validateReviewData(req.body);
 
     const query = `
         UPDATE reviews
