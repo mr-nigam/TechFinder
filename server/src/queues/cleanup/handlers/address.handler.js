@@ -1,6 +1,7 @@
-import pool from '#config/db.js';
-import { deleteFromCloudinary } from '#shared';
+import pool from 
+'#config/database/postgres.js';
 
+import cleanupQueue from '../cleanup.queue';
 
 const deleteAddress = async (addressId) => {
     let query = `
@@ -41,16 +42,17 @@ const deleteAddress = async (addressId) => {
 
     let imageFiles = result.rows;
 
+    // do it at this point only
     let queueResults = await Promise.allSettled(
         imageFiles.map( (file) =>
-            cloudinaryQueue.add(
-                "image:delete",
+            cleanupQueue.add(
+                "cloudinary:file:delete",
                 {
                     public_id: file.public_id,
                     resourceType: file.media_type
                 },
                 {
-                    jobId: `image:delete:${file.public_id}`
+                    jobId: `cloudinary:file:delete:${file.public_id}`
                 }
             )
         )

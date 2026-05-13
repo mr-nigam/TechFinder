@@ -4,7 +4,7 @@ import {
 
 import {
     setCache
-} from '#lib/cache.js';
+} from '#infra/cache/cache.js';
 
 import {
     generateOtp
@@ -21,8 +21,9 @@ const forgotPassword = async(data) =>{
     const message = 
         loginMessageTemplate(otp);
     
-    await sendEmailOtp(data, message.sms);
+    await sendPhoneOtp(data, message.sms);
 
+    
     const loginOtpKey = 
         `login:${data.loginToken}`;
 

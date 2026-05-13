@@ -4,7 +4,7 @@ import {
 
 import {
     setCache
-} from '#lib/cache.js';
+} from '#infra/cache/cache.js';
 
 import {
     generateOtp

@@ -59,6 +59,8 @@ const createTechnicianSkillsTable = async() => {
             WHERE is_active = true;
         `);
 
+        await createUpdatedAtTrigger('technician_skills');
+        
         console.log("Technician Skills table and indexes created successfully");
 
     }catch(err){

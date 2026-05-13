@@ -1,7 +1,8 @@
-import pool from '#config/db.js';
+import pool from 
+'#config/database/postgres.js';
 
 import {
-    cloudinaryQueue,
+    cleanupQueue,
     emailQueue
 } from '#queues';
 
@@ -81,14 +82,14 @@ const deleteUser = async (userId) => {
 
     let queueResults = await Promise.allSettled(
         imageFiles.map( (file) =>
-            cloudinaryQueue.add(
-                "image:delete",
+            cleanupQueue.add(
+                "cloudinary:file:delete",
                 {
                     public_id: file.public_id,
                     resourceType: file.media_type
                 },
                 {
-                    jobId: `image:delete:${file.public_id}`
+                    jobId: `cloudinary:file:delete:${file.public_id}`
                 }
             )
         )

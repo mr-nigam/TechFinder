@@ -1,13 +1,6 @@
 import pool from 
 '#config/database/postgres.js';
 
-import { 
-    getCache,
-    setCache,
-    deleteCache,
-    deleteMultipleCache
-} from '#infra';
-
 import {
     ApiError,
     ApiResponse,
@@ -273,7 +266,16 @@ const getMyAddresses = asyncHandler(async (req, res) => {
         LIMIT $2, OFFSET $3; 
     `;
 
-    const result = await pool.query(query,[user.id]);
+    const values = [
+        user.id,
+        limit,
+        offset
+    ]
+    const result = await pool.query(
+        query,
+        values
+    );
+    
     const addresses = result.rows;
 
     return res

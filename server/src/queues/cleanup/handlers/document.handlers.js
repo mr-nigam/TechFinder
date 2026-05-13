@@ -1,5 +1,7 @@
-import pool from '#config/db.js';
-import cloudinaryQueue from '#queues/cloudinary/cloudinary.queue.js';
+import pool from 
+'#config/database/postgres.js';
+
+import cleanupQueue from '../cleanup.queue';
 
 
 const deleteDocument = async (documentId) =>{
@@ -22,8 +24,9 @@ const deleteDocument = async (documentId) =>{
 
     const public_id = result.rows[0].public_id;
     
+    // do it at this point only
     try{
-        await cloudinaryQueue.add(
+        await cleanupQueue.add(
             "document:delete",
             {
                 public_id: public_id,
