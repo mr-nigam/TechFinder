@@ -59,11 +59,10 @@ const register = asyncHandler(async (req, res) => {
     
     await checkUserDetails(user);
 
-    let {
+    const {
         specialization = "",
         about = "",
         languages_spoken = [],
-        service_radius_km = 15,
     } = req.body;
         
     const normalized = {
@@ -82,7 +81,13 @@ const register = asyncHandler(async (req, res) => {
         );
     }
     
-    if(service_radius_km<0) {
+    let service_radius_km = 
+        req.body.service_radius_km;
+    
+    if(
+        !service_radius_km || 
+        service_radius_km < 0
+    ){
         service_radius_km = 15;
     }
 
@@ -103,7 +108,7 @@ const register = asyncHandler(async (req, res) => {
             RETURNING ${TECHNICIAN_PROFILE_FIELDS};
         `;
 
-        let values = [
+        const values = [
             user.id,
             normalized.specialization,
             normalized.about,
@@ -111,7 +116,7 @@ const register = asyncHandler(async (req, res) => {
             service_radius_km
         ];
 
-        let result = await client.query(query,values);
+        const result = await client.query(query,values);
 
         if(result.rowCount === 0){
             throw new ApiError(
@@ -128,7 +133,7 @@ const register = asyncHandler(async (req, res) => {
 
         await client.query(query,[user.id]);
         
-        let technician = {
+        const technician = {
             ...result.rows[0],
             phone: user.phone,
         };
@@ -223,10 +228,12 @@ const updateProfile = asyncHandler(async (req, res) =>{
     
     let {
         about = "",
-        languages_spoken = [],
         service_radius_km = 15,
     } = req.body;
 
+    const languages_spoken = 
+        req.body.languages_spoken || [];
+    
     about = about?.trim() || "";
     
     if( !about ||
@@ -243,7 +250,7 @@ const updateProfile = asyncHandler(async (req, res) =>{
         service_radius_km = 15;
     }
     
-    let query = `
+    const query = `
         UPDATE technicians
         SET about = $1,
             languages_spoken = $2
@@ -422,7 +429,7 @@ const updateCurrentLocation = asyncHandler(async (req, res) =>{
         req.body
     );
 
-    let captured_at = req.body?.captured_at || null;
+    const captured_at = req.body?.captured_at || null;
 
     const query = `
         UPDATE technicians

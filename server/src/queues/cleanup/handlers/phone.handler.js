@@ -2,13 +2,13 @@ import pool from
 '#config/database/postgres.js';
 
 
-const deletePhone = async (phoneId) => {
-    let query = `
+const deletePhone = async (phoneId) => {    
+    const query = `
         DELETE FROM phones
         WHERE id = $1;
     `;
 
-    let result = await pool.query(
+    const result = await pool.query(
         query,
         [phoneId]
     );

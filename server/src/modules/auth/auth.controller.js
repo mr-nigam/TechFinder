@@ -348,7 +348,7 @@ const logOut = asyncHandler (async (req, res) => {
     try{
         await client.query("BEGIN");
 
-        let query = `
+        const query = `
             UPDATE users
             SET refresh_token = NULL
             WHERE id = $1;
@@ -357,7 +357,7 @@ const logOut = asyncHandler (async (req, res) => {
         await client.query(query,[user.id]);
 
         if(technician){
-            let query = `
+            const query = `
                 UPDATE technicians
                 SET status = 'offline',
                     last_seen_at = NOW()
@@ -512,7 +512,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
         LIMIT 1; 
     `;
         
-    let result = await pool.query(
+    const result = await pool.query(
         query,
         [filter]
     );

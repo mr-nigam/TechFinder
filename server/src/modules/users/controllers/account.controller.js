@@ -183,9 +183,9 @@ const reactivateAccount = asyncHandler(async (req, res) => {
             LIMIT 1;
         `;
 
-        let result = await client.query(query,[value]);
+        const result = await client.query(query,[value]);
 
-        let user = result.rows[0];
+        const user = result.rows[0];
 
         if (!user) {
             throw new ApiError(

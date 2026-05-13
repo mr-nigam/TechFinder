@@ -55,13 +55,14 @@ const verifyJWT = asyncHandler(async (req, _, next) => {
         LIMIT 1;
     `;
 
-    let result = await pool.query(
+    const result = await pool.query(
         query,
         [decodedToken?.id]
     );
+
     const user =  result.rows[0]?.user;
     
-    if(!user){
+    if(result.rowCount === 0){
         throw new ApiError(
             401,
             "User not found or token invalid"
@@ -88,7 +89,7 @@ const verifyJWT = asyncHandler(async (req, _, next) => {
         }
     }
 
-    req.user = user;
+    req.user = result.rows[0].user;
 
     query = `
         SELECT

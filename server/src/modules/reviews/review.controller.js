@@ -52,7 +52,7 @@ const createReview = asyncHandler(async (req,res) => {
             AND status = 'completed';
     `;
 
-    let result = await pool.query(
+    const result = await pool.query(
         query,
         [bookingId, user.id]
     );
@@ -113,7 +113,7 @@ const createReview = asyncHandler(async (req,res) => {
             );
         }
 
-        let review = result.rows[0];
+        const review = result.rows[0];
 
         review.username = user.username;
 
@@ -300,7 +300,7 @@ const getReviews = asyncHandler(async (req,res) => {
         sortBy = "created_at";
     }
 
-    let query = `
+    const query = `
         SELECT 
             reviewer.username AS reviewer_username,
             reviewer.profile_picture_url, 
@@ -330,7 +330,7 @@ const getReviews = asyncHandler(async (req,res) => {
         skip
     ];
 
-    let result = await pool.query(
+    const result = await pool.query(
         query,
         values
     );

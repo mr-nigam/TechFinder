@@ -206,7 +206,8 @@ const updateProfilePicture = asyncHandler(async (req, res) => {
         FROM users
         WHERE id = $1;
     `;
-    let result = await pool.query(query,[user.id]);
+
+    const result = await pool.query(query,[user.id]);
     const oldPublicId = result.rows[0].profile_picture_public_id;
     if(result.rowCount === 0){
         throw new ApiError(
@@ -224,7 +225,7 @@ const updateProfilePicture = asyncHandler(async (req, res) => {
         RETURNING ${USER_PROFILE_FIELDS};
     `;
 
-    let values = [
+    const values = [
         uploaded.public_id,
         uploaded.secure_url,
         user.id

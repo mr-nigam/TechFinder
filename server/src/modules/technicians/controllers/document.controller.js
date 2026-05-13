@@ -80,9 +80,9 @@ const uploadDocument = asyncHandler(async (req, res) => {
         );
     
     }
-    let public_id = uploadedDoc.public_id;
+    const public_id = uploadedDoc.public_id;
     try{
-        let query = `
+        const query = `
             INSERT INTO technician_documents(
                 technician_id,
                 document_id,
@@ -108,7 +108,7 @@ const uploadDocument = asyncHandler(async (req, res) => {
             expiryDate || null,
         ];
 
-        let result = await pool.query(query,values);
+        const result = await pool.query(query,values);
 
         if(result.rowCount === 0){
             throw new ApiError(
@@ -202,7 +202,7 @@ const deleteDocument = asyncHandler(async (req, res) =>{
         );
     }
 
-    let query = `
+    const query = `
         UPDATE technician_documents
             SET deleted_at = NOW()
         WHERE id = $1
@@ -210,7 +210,7 @@ const deleteDocument = asyncHandler(async (req, res) =>{
             AND deleted_at IS NULL;
     `;
 
-    let result = await pool.query(
+    const result = await pool.query(
         query,
         [docId, technician.id]
     );

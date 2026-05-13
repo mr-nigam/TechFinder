@@ -40,10 +40,10 @@ const deleteAddress = async (addressId) => {
         );
     }
 
-    let imageFiles = result.rows;
+    const imageFiles = result.rows;
 
     // do it at this point only
-    let queueResults = await Promise.allSettled(
+    const queueResults = await Promise.allSettled(
         imageFiles.map( (file) =>
             cleanupQueue.add(
                 "cloudinary:file:delete",

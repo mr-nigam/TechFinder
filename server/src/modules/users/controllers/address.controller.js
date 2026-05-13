@@ -314,7 +314,7 @@ const deleteAddress = asyncHandler(async (req, res) => {
     try{
         await client.query("BEGIN");
 
-        let query = `
+        const query = `
             UPDATE addresses
             SET deleted_at = NOW()
             WHERE id = $1
@@ -322,7 +322,7 @@ const deleteAddress = asyncHandler(async (req, res) => {
                 AND deleted_at IS NULL;
         `;
 
-        let result = await client.query(
+        const result = await client.query(
             query,
             [addressId, user.id]
         );
@@ -387,7 +387,7 @@ const setDefault = asyncHandler(async (req, res) => {
         );
     }
 
-    let query = `
+    const query = `
         UPDATE addresses
         SET is_default = CASE
             WHEN id = $1 THEN true
@@ -398,7 +398,7 @@ const setDefault = asyncHandler(async (req, res) => {
         RETURNING *;
     `;
 
-    let result = await pool.query(query, [addressId, userId]);
+    const result = await pool.query(query, [addressId, userId]);
 
     if(result.rowCount === 0){
         throw new ApiError(
@@ -541,7 +541,7 @@ const updateLocation = asyncHandler(async (req, res) => {
         req.body
     );
 
-    let captured_at = req.body?.captured_at || null;
+    const captured_at = req.body?.captured_at || null;
 
     const query = `
         UPDATE addresses

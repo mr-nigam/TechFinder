@@ -26,7 +26,7 @@ const checkUserDetails = async (user)=>{
         );
     }
 
-    let query = `
+    const query = `
         SELECT id 
         from addresses
         WHERE user_id = $1
@@ -34,7 +34,7 @@ const checkUserDetails = async (user)=>{
         LIMIT 1;
     `;
 
-    let result = await pool.query(query,[user.id]);
+    const result = await pool.query(query,[user.id]);
 
     if(result.rowCount === 0){
         throw new ApiError(

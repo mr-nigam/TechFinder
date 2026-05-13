@@ -1,6 +1,8 @@
 import { Worker } from 'bullmq';
-import redisConnection from '#config/redis.js';
 import emailHandlers from './email.handlers.js';
+
+import queueRedis from 
+'#config/redis/queue.redis.js';
 
 
 new Worker(
@@ -9,7 +11,7 @@ new Worker(
     async (job) => {
 
         const handler =
-            otpHandlers[job.name];
+            emailHandlers[job.name];
 
         if(!handler){
             throw new Error(
@@ -20,7 +22,7 @@ new Worker(
         await handler(job.data);
     },
     {
-        connection: redisConnection,
+        connection: queueRedis,
         concurrency: 5
     }
 );
