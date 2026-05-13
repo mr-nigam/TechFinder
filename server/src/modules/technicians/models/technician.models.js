@@ -1,9 +1,11 @@
-import pool from '#config/db.js';
-import createUpdatedAtTrigger from '#shared/utils/dbTriggers.util.js';
+import pool from 
+'#config/database/postgres.js';
+
+import createUpdatedAtTrigger from '#shared';
 
 
 const createTechniciansTable = async () => {
-  try {
+  try{
      await pool.query(`
       CREATE EXTENSION IF NOT EXISTS postgis;
       CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -16,10 +18,19 @@ const createTechniciansTable = async () => {
         user_id UUID UNIQUE NOT NULL
           REFERENCES users(id) ON DELETE CASCADE,
 
+        verified_by UUID
+          REFERENCES users(id)
+          ON DELETE SET NULL
+        
         specialization VARCHAR(100) NOT NULL,
         about TEXT,
 
+        search_vector tsvector
+
         languages_spoken TEXT[] DEFAULT '{}',
+
+        experience_years INT DEFAULT 0
+          CHECK (experience_years >= 0),
 
         verification_status VARCHAR(20)
         CHECK (
@@ -31,21 +42,36 @@ const createTechniciansTable = async () => {
         ) DEFAULT 'pending',
 
         verified_at TIMESTAMPTZ,
-        verified_by UUID,
 
         status VARCHAR(20) NOT NULL
           CHECK (
             status IN (
               'online',
               'offline',
-              'on_job',
-              'break',
-              'suspended'
+              'away'
             )
           )
           DEFAULT 'offline',
 
-        service_radius_km INT DEFAULT 15
+        availability_status VARCHAR(20)
+            CHECK (
+              availability_status IN (
+                'available',
+                'busy',
+                'on_break'
+              )
+            )
+          DEFAULT 'available',
+        account_status VARCHAR(20)
+          CHECK (
+            account_status IN (
+              'active',
+              'suspended',
+              'banned'
+            )
+          )
+        DEFAULT 'active',
+          service_radius_km INT DEFAULT 15
           CHECK (service_radius_km BETWEEN 1 AND 100),
 
         last_seen_at TIMESTAMPTZ,
@@ -63,7 +89,7 @@ const createTechniciansTable = async () => {
             )
           ),
 
-        average_rating NUMERIC(2,1) DEFAULT 0
+        average_rating NUMERIC(3,2) DEFAULT 0
           CHECK (average_rating BETWEEN 0 AND 5),
 
         total_reviews INT DEFAULT 0
@@ -94,12 +120,17 @@ const createTechniciansTable = async () => {
         AND deleted_at IS NULL
         AND deactivated_at IS NULL;
     `);
-
     
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_tech_location
       ON technicians
       USING GIST(current_location);
+    `);
+
+    await pool.query(`
+      CREATE INDEX idx_technician_search
+      ON technicians
+      USING GIN(search_vector);
     `);
 
     await pool.query(`

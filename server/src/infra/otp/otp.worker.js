@@ -1,6 +1,8 @@
 import { Worker } from 'bullmq';
-import redisConnection from '#config/redis.js';
 import otpHandlers from './otp.handlers.js';
+
+import infraRedis from 
+'#config/redis/infra.redis.js';
 
 
 new Worker(
@@ -19,7 +21,7 @@ new Worker(
         await handler(job.data);
     },
     {
-        connection: redisConnection,
+        connection: infraRedis,
         concurrency: 5
     }
 );

@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
-import pool from '#config/db.js';
+import pool from 
+'#config/database/postgres.js';
 
 import {
     ApiError,
@@ -14,7 +15,7 @@ import {
 
 import{
     invalidateCaches
-} from '#lib/cache.js';
+} from '#infra';
 
 
 const deleteAccount = asyncHandler(async (req, res) => {
@@ -116,7 +117,7 @@ const deleteAccount = asyncHandler(async (req, res) => {
 
     try{
         await cleanupQueue.add(
-            "user:delete:account",
+            "user:delete",
             {
                 userId: user.id 
             },
@@ -278,7 +279,7 @@ const deactivateAccount = asyncHandler(async (req, res) => {
 
     try{
         await cleanupQueue.add(
-            "user:deactivate:account",
+            "user:deactivate",
             { 
                 userId: user.id 
             },

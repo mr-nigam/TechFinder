@@ -1,11 +1,12 @@
 import { Queue } from 'bullmq';
-import redisConnection from '#config/redis.js';
+import queueRedis from 
+'#config/redis/queue.redis.js';
 
 
 const notificationQueue = new Queue(
     "notificationQueue",
     {
-        connection: redisConnection,
+        connection: queueRedis,
         defaultJobOptions: {
             attempts: 5,
             backoff: {

@@ -1,11 +1,6 @@
 import bcrypt from 'bcrypt';
-import pool from '#config/db.js';
-
-import {
-    getCache,
-    deleteCache,
-    invalidateCaches
-} from '#lib/cache';
+import pool from 
+'#config/database/postgres.js';
 
 import {
     ApiError,
@@ -19,19 +14,23 @@ import {
     getAccessCookieOptions,
     getRefreshCookieOptions,
     
-    hasEmpty,
-    isValidUUID,
     isValidPhone,
     isValidEmail,
     
-    uploadOnCloudinary,
-    removeLocalFile
 } from '#shared';
 
 import {
-    otpQueue,
     emailQueue
 } from '#queues';
+
+import {
+    otpQueue,
+    
+    getCache,
+    deleteCache,
+    invalidateCaches
+} from '#infra';
+
 
 
 const resetPassword = asyncHandler(async (req, res) => {

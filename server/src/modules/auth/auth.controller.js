@@ -1,14 +1,19 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from "bcrypt";
 import crypto from 'crypto';
-import pool from '#config/db.js';
+
+import pool from 
+'#config/database/postgres.js';
+
 
 import {
+    otpQueue,
+
     setCache,
     getCache,
     deleteCache,
     invalidateCaches
-} from '#lib/cache.js';
+} from '#infra';
 
 import {
     ApiError,
@@ -31,9 +36,8 @@ import {
 } from '#shared';
 
 import {
-    cloudinaryQueue,
-    emailQueue,
-    otpQueue
+    cleanupQueue,
+    emailQueue
 } from '#queues';
 
 
@@ -176,14 +180,14 @@ const register = asyncHandler(async (req, res) => {
         }catch(_) {}
 
         try{
-            await cloudinaryQueue.add(
-                "delete:image", 
+            await cleanupQueue.add(
+                "cloudinary:file:delete", 
                 { 
                     public_id: public_id,
                     resourceType: "image"
                 },
                 {
-                    jobId: `delete:image:${public_id}`
+                    jobId: `cloudinary:file:delete:${public_id}`
                 }
             );
 

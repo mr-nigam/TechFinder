@@ -1,5 +1,7 @@
-import pool from '#config/db.js';
-import createUpdatedAtTrigger from '#shared/utils/dbTriggers.util.js';
+import pool from 
+'#config/database/postgres.js';
+
+import createUpdatedAtTrigger from '#shared';
 
 
 const createTechnicianSkillsTable = async() => {

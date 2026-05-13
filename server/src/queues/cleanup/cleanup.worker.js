@@ -1,6 +1,8 @@
 import { Worker } from 'bullmq';
-import redisConnection from '#config/redis.js';
 import cleanupHandlers from './cleanup.handlers';
+
+import queueRedis from 
+'#config/redis/queue.redis.js';
 
 
 new Worker(
@@ -20,7 +22,7 @@ new Worker(
         await handler(job.data);
     },
     {
-        connection: redisConnection,
+        connection: queueRedis,
         concurrency: 5
     }
 );

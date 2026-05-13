@@ -15,10 +15,8 @@ import {
 } from '#shared';
 
 import {
-    otpQueue,
     emailQueue,
-    cleanupQueue,
-    cloudinaryQueue
+    cleanupQueue
 } from '#queues';
 
 
@@ -147,14 +145,14 @@ const uploadDocument = asyncHandler(async (req, res) => {
 
     }catch(err){
         try{
-            await cloudinaryQueue.add(
-                "document:delete",
+            await cleanupQueue.add(
+                "cloudinary:file:delete",
                 {
                     public_id: public_id,
                     resourceType: "raw"
                 },
                 {
-                    jobId: `document:delete:${public_id}`
+                    jobId: `cloudinary:file:delete:${public_id}`
                 }
             );
             
@@ -268,7 +266,6 @@ const deleteDocument = asyncHandler(async (req, res) =>{
 });
 
 const verifyDocument = asyncHandler(async (req, res) =>{ });
-
 
 export {
     uploadDocument,

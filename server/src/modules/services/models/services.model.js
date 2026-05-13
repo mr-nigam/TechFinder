@@ -5,13 +5,12 @@ const createServicesTable = async() => {
     try{
         await pool.query(`
             CREATE TABLE IF NOT EXISTS services(
-                -- Keys
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
                 category_id UUID NOT NULL
-                    REFERENCES service_categories(id) ON DELETE CASCADE,
+                    REFERENCES service_categories(id) 
+                    ON DELETE CASCADE,
 
-                -- Service Details
                 service_name VARCHAR(100) NOT NULL,
                 slug VARCHAR(120) UNIQUE NOT NULL,
 
@@ -23,25 +22,20 @@ const createServicesTable = async() => {
                         estimated_duration_minutes BETWEEN 5 AND 1440
                     ),
 
-                -- Settings
                 is_active BOOLEAN DEFAULT TRUE,
 
                 display_order INT DEFAULT 0
                     CHECK (display_order >= 0),
 
-                -- Deleteion Status
-                is_deleted BOOLEAN DEFAULT FALSE,
+                deleted_at TIMESTAMPTZ,
                 
-                -- Audit
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 
-                -- Constraints
                 UNIQUE(category_id, service_name)
             );    
         `);
         
-        // Indexing
         await pool.query(`
             CREATE INDEX IF NOT EXISTS idx_services_category
             ON services(category_id);

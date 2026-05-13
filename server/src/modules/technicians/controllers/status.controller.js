@@ -1,4 +1,5 @@
-import pool from '#config/db';
+import pool from 
+'#config/database/postgres.js';
 
 import {
     ApiError,

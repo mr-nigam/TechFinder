@@ -1,27 +1,20 @@
 import 'dotenv/config';
-import { connectDB } from './config/db.js';
+
 import app from './app.js';
+
+import bootstrapDB 
+from '#bootstrap/db.bootstrap.js';
 
 
 const startServer = async () => {
-    try {
-        await connectDB();
 
-        app.on("error", (error) => {
-            console.log("Error:", error);
-            throw error;
-        });
+    await bootstrapDB();
 
-        const PORT = process.env.PORT || 8000;
+    const PORT = process.env.PORT || 8000;
 
-        app.listen(PORT, () => {
-            console.log(`Server is running at port: ${PORT}`);
-        });
-
-    } catch(error){
-        
-        console.log("POSTGRE db connection failed !!!", error);
-    }
+    app.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+    });
 };
 
 

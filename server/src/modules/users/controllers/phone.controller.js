@@ -1,16 +1,13 @@
-import pool from '#config/db.js';
+import pool from 
+'#config/database/postgres.js';
 
 import {
     ApiError,
     ApiResponse,
     asyncHandler,
-    
-    hasEmpty,
+
     isValidPhone,
-    isValidEmail,
     
-    uploadOnCloudinary,
-    removeLocalFile
 } from '#shared';
 
 import {
@@ -164,6 +161,7 @@ const deletePhone = asyncHandler(async (req, res) => {
         await cleanupQueue.add(
             "phone:delete",
             { 
+                userId: user.id,
                 phoneId: phoneId,
             },
             {

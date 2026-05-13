@@ -1,4 +1,6 @@
-import pool from '#config/db.js';
+import pool from 
+'#config/database/postgres.js';
+
 import { createUpdatedAtTrigger } from '#shared';
 
 
@@ -78,6 +80,7 @@ const createBookingsTable = async () => {
 
                 --remove
                 discount_amount NUMERIC(8,2) NOT NULL,
+                
                 payment_status VARCHAR(20) NOT NULL
                     DEFAULT 'pending'
                     CHECK(

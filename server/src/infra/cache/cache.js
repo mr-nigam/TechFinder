@@ -1,9 +1,10 @@
-import redisConnection from '#config/redis.js';
+import infraRedis from 
+'#config/redis/infra.redis.js';
 
 
 const getCache = async(key) => {
     try{
-        const data = await redisConnection.get(key);
+        const data = await infraRedis.get(key);
         return data ? JSON.parse(data) : null;
     }catch(err){
         console.error("Redis GET failed:", err.message);
@@ -13,7 +14,7 @@ const getCache = async(key) => {
 
 const setCache = async(key, value, ttl = 600) => {
     try{
-        await redisConnection.set(
+        await infraRedis.set(
             key,
             JSON.stringify(value),
             "EX",
@@ -30,7 +31,7 @@ const setCache = async(key, value, ttl = 600) => {
 
 const deleteCache = async(key) => {
     try{
-        await redisConnection.del(key);
+        await infraRedis.del(key);
     }catch(err){
         console.error("Redis DEL failed:", err.message);
     }
@@ -44,7 +45,7 @@ const deleteMultipleCache = async(keys) => {
 
         if (keyArray.length === 0) return 0;
 
-        const deletedCount = await redisConnection.del(...keyArray);
+        const deletedCount = await infraRedis.del(...keyArray);
 
         return deletedCount;
     }catch(err){

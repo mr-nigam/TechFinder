@@ -1,13 +1,13 @@
 import { Queue } from 'bullmq';
 
-import redisConnection 
-from '#config/redis.js';
+import queueRedis from 
+'#config/redis/queue.redis.js';
 
 
 const cleanupQueue = new Queue(
     "cleanupQueue",
     {
-        connection: redisConnection,
+        connection: queueRedis,
 
         defaultJobOptions: {
 

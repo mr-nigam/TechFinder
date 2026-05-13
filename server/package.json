@@ -20,28 +20,34 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "worker": "nodemon src/queues/server.js",
+    "worker": "nodemon src/bootstrap/redis.bootstrap.js",
     "all": "concurrently \"npm run dev\" \"npm run worker\"",
     "start": "node src/server.js"
   },
-    "imports": {
-  "#shared": "./src/shared/index.js",
-  "#shared/*": "./src/shared/*",
 
-  "#config/*": "./src/config/*",
-  "#middlewares/*": "./src/middlewares/*",
-  "#lib/*": "./src/lib/*",
+  "imports": {
+    "#shared": "./src/shared/index.js",
+    "#shared/*": "./src/shared/*",
 
-  "#queues": "./src/queues/index.js",
-  "#queues/*": "./src/queues/*",
+    "#infra": "./src/infra/index.js",
+    "#infra/*": "./src/infra/*",
 
-  "#modules/*":"./src/modules/*",
-  "#users/*": "./src/modules/users/*",
-  "#auth/*": "./src/modules/auth/*",
-  "#technicians/*": "./src/modules/technicians/*",
-  "#bookings/*": "./src/modules/bookings/*",
-  "#notifications/*": "./src/modules/notifications/*"
-},
+    "#queues": "./src/queues/index.js",
+    "#queues/*": "./src/queues/*",
+
+    "#config/*": "./src/config/*",
+    "#middlewares/*": "./src/middlewares/*",
+    "#lib/*": "./src/lib/*",
+    "#bootstrap/*": "./src/bootstrap/*",
+  
+    "#modules/*": "./src/modules/*",
+    "#users/*": "./src/modules/users/*",
+    "#auth/*": "./src/modules/auth/*",
+    "#technicians/*": "./src/modules/technicians/*",
+    "#bookings/*": "./src/modules/bookings/*",
+    "#notifications/*": "./src/modules/notifications/*"
+  },
+  
   "dependencies": {
     "bcrypt": "^6.0.0",
     "bullmq": "^5.76.5",
@@ -51,6 +57,7 @@
     "crypto": "^1.0.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "http": "^0.0.1-security",
     "ioredis": "^5.10.1",
     "jsonwebtoken": "^9.0.3",
     "module-alias": "^2.3.4",
@@ -60,7 +67,8 @@
     "nodemailer": "^8.0.7",
     "p-limit": "^7.3.0",
     "pg": "^8.20.0",
-    "twilio": "^6.0.0"
+    "twilio": "^6.0.0",
+    "ws": "^8.20.0"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

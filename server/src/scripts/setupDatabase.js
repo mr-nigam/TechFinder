@@ -1,4 +1,5 @@
 import { connectDB } from './config/db.js';
+import createUsersTable from '#users/models/user.model.js';
 
 
 const initDB = async () => {

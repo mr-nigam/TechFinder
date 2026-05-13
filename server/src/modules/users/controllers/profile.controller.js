@@ -1,19 +1,16 @@
-import pool from '#config/db.js';
+import pool from 
+'#config/database/postgres.js';
 
 import { 
     getCache,
     setCache,
     deleteCache,
-} from '#lib/cache';
+} from '#infra';
 
 import {
     ApiError,
     ApiResponse,
     asyncHandler,
-    
-    hasEmpty,
-    isValidPhone,
-    isValidEmail,
     
     uploadOnCloudinary,
     removeLocalFile,
@@ -22,8 +19,7 @@ import {
 } from '#shared'
 
 import {
-    emailQueue,
-    cloudinaryQueue
+    cleanupQueue
 } from '#queues';
 
 
@@ -239,14 +235,14 @@ const updateProfilePicture = asyncHandler(async (req, res) => {
     if(oldPublicId){
         try{
             await deleteCache(cacheKey);
-            await cloudinaryQueue.add(
-                "delete-from-cloudinary",
+            await cleanupQueue.add(
+                "cloudinary:file:delete",
                 {
                     public_id: oldPublicId,
                     resourceType: "image"
                 },
                 {
-                    jobId: `delete:image:${oldPublicId}`
+                    jobId: `cloudinary:file:delete:${oldPublicId}`
                 }
             );
         }catch(err){

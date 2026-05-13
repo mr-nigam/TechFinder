@@ -8,7 +8,6 @@ import errorHandler from './middlewares/errorHandler.js';
 
 const app = express();
 
-
 // dev logger
 if(process.env.NODE_ENV === "development"){
    app.use(morgan("dev"));
@@ -36,7 +35,7 @@ app.use((req, res, next) => {
 });
 
 import authRouter from '#auth/auth.routes.js';
-import reviewRouter from '#modules/reviews/review.routes.js';
+// import reviewRouter from '#modules/reviews/review.routes.js';
 
 import {
     accountRouter,

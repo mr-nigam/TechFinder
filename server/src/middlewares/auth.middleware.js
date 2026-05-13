@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken';
-import pool from '#config/db.js';
+import pool from 
+'#config/database/postgres.js';
+
 
 import {
     ApiError,
