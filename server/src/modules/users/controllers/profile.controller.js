@@ -12,7 +12,6 @@ import {
     ApiResponse,
     asyncHandler,
     
-    uploadOnCloudinary,
     removeLocalFile,
 
     formatMyProfile
@@ -21,6 +20,10 @@ import {
 import {
     cleanupQueue
 } from '#queues';
+
+import {
+    uploadOnCloudinary
+} from '#services';
 
 
 const USER_PROFILE_FIELDS = `

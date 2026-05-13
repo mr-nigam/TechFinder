@@ -6,35 +6,27 @@ from '#lib/emailTransporter.js';
 import phoneChangedMessageTemplate 
 from '../templates/phone-changed.template.js';
 
+import findActiveUserById from 
+'#repositories/user.repository.js';
+
 
 const phoneChanged = async (data) => {
-    const query = `
-        SELECT
-            email,
-            phone,
-            first_name,
-            last_name
-        FROM users
-        WHERE id = $1 AND 
-            deleted_at IS NULL AND
-            deactivated_at IS NULL;
-    `;
-
-    const result = await pool.query(
-        query,
-        [data.userId]
+    const user = await findActiveUserById(
+        data.userId
     );
 
-    if(result.rowCount === 0){
+    if(!user){
         throw new Error(
-            "User not found"
+            'User not found'
         );
     }
 
-    const user = result.rows[0];
     const newPhone = user.phone;
 
-    const message = phoneChangedMessageTemplate(user,newPhone);
+    const message = phoneChangedMessageTemplate(
+        user.username,
+        newPhone
+    );
 
     await transporter.sendMail({
         from: `"TechFinder" <${process.env.EMAIL_USER}>`,

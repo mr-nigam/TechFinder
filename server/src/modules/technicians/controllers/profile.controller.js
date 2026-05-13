@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+
 import pool from 
 '#config/database/postgres.js';
 
@@ -14,14 +15,22 @@ import {
     ApiResponse,
     asyncHandler,
 
+    clearAuthCookies,
+
     checkUserDetails,
-    formatTechnicianProfile
+    formatTechnicianProfile,
+
+    parseAndValidateCoordinates
 } from '#shared';
 
 import { 
     emailQueue,
     cleanupQueue
 } from '#queues';
+
+import {
+    verifyUserPassword
+} from '#services';
 
 
 const TECHNICIAN_PROFILE_FIELDS = `
@@ -291,40 +300,10 @@ const deleteAccount = asyncHandler(async (req, res) =>{
         );
     }
 
-    const password = req.body.password?.trim() || "";
-
-    if(!password){
-        throw new ApiError(
-            400,
-            "Please enter password"
-        );
-    }
-
-    let query = `
-        SELECT 
-            password
-        FROM users
-        WHERE id = $1;
-    `;
-    
-    let result = await pool.query(query,[user.id]);
-
-    if(result.rows.length === 0){
-        throw new ApiError(
-            401,
-            "Invalid credentials"
-        );
-    }
-
-    let oldHashedpassword = result.rows[0].password;
-    const isMatch = await bcrypt.compare(password,oldHashedpassword);
-
-    if(!isMatch){
-        throw new ApiError(
-            401,
-            "Invalid credentials"
-        );
-    }
+    await verifyUserPassword(
+        user.id,
+        req.body.password
+    );
 
     const client = await pool.connect();
 
@@ -365,23 +344,7 @@ const deleteAccount = asyncHandler(async (req, res) =>{
         client.release();
     }   
 
-    res.clearCookie(
-        "accessToken",
-        {
-            httpOnly: true,
-            secure: true,
-            sameSite: "strict",
-        }
-    );
-    
-    res.clearCookie(
-        "refreshToken",
-        {
-            httpOnly: true,
-            secure: true,
-            sameSite: "strict",
-        }
-    );
+    clearAuthCookies(res);
 
     const cacheKeys = [
         `auth:user:${user.user.id}`,
@@ -450,47 +413,16 @@ const updateCurrentLocation = asyncHandler(async (req, res) =>{
         );
     }
 
-    let {
+    const {
         lat,
         lng,
-        captured_at,
         accuracy_meters,
         source
-    } = req.body;
+    } = parseAndValidateCoordinates(
+        req.body
+    );
 
-    if(lat === undefined || lng === undefined){
-        throw new ApiError(
-            400,
-            "Give proper locations coordinates"
-        );
-    }
-
-    lat = Number(lat);
-    lng = Number(lng);
-
-    if(isNaN(lat) ||
-        isNaN(lng) || 
-        lat > 90 ||
-        lat < -90 ||
-        lng > 180 ||
-        lng < - 180
-    ){
-        throw new ApiError(
-            400,
-            "Invalid Lonigitude and Latitude coordinates"
-        );
-    }
-
-    const allowedSources = [
-        "gps",
-        "manual_pin",
-        "geocoded",
-        "admin"
-    ];
-    
-    if(!allowedSources.includes(source)){
-        source = "gps";
-    }
+    let captured_at = req.body?.captured_at || null;
 
     const query = `
         UPDATE technicians

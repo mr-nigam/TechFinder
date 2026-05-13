@@ -5,7 +5,6 @@ import crypto from 'crypto';
 import pool from 
 '#config/database/postgres.js';
 
-
 import {
     otpQueue,
 
@@ -24,14 +23,15 @@ import {
     
     generateAccessToken,
     generateRefreshToken,
-    getAccessCookieOptions,
-    getRefreshCookieOptions,
+    getAccessTokenCookieOptions,
+    getRefreshTokenCookieOptions,
+    setAuthCookies,
+    clearAuthCookies,
     
     hasEmpty,
     isValidPhone,
     isValidEmail,
     
-    uploadOnCloudinary,
     removeLocalFile
 } from '#shared';
 
@@ -39,6 +39,10 @@ import {
     cleanupQueue,
     emailQueue
 } from '#queues';
+
+import {
+    uploadOnCloudinary
+} from '#services';
 
 
 const register = asyncHandler(async (req, res) => {
@@ -315,18 +319,14 @@ const logIn = asyncHandler (async (req, res) => {
         );
     }
 
+    setAuthCookies(
+        res,
+        accessToken,
+        refreshToken
+    );
+
     return res
         .status(200)
-        .cookie(
-            "accessToken",
-            accessToken,
-            getAccessCookieOptions()
-        )
-        .cookie(
-            "refreshToken",
-            refreshToken,
-            getRefreshCookieOptions()
-        )
         .json(
             new ApiResponse(
                 200,
@@ -383,23 +383,7 @@ const logOut = asyncHandler (async (req, res) => {
         client.release();
     }
     
-    res.clearCookie(
-        "accessToken",
-        {
-            httpOnly: true,
-            secure: true,
-            sameSite: "strict",
-        }
-    );
-    
-    res.clearCookie(
-        "refreshToken",
-        {
-            httpOnly: true,
-            secure: true,
-            sameSite: "strict",
-        }
-    );
+    clearAuthCookies(res);
 
     await invalidateCaches(user.id, technician?.id);
 

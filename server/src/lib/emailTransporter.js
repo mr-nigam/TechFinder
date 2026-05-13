@@ -8,7 +8,6 @@ const {
 
 if(!EMAIL_USER || !EMAIL_PASS){
     throw new Error(
-        500,
         'Missing email credentials'
     );
 }

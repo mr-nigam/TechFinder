@@ -1,4 +1,5 @@
-import pool from '#config/db.js';
+import pool from 
+'#config/database/postgres.js';
 
 import {
     ApiError,
@@ -8,9 +9,7 @@ import {
     hasEmpty,
     isValidUUID,
     
-    uploadOnCloudinary,
     removeLocalFile,
-
     formatDocument
 } from '#shared';
 
@@ -18,6 +17,10 @@ import {
     emailQueue,
     cleanupQueue
 } from '#queues';
+
+import {
+    uploadOnCloudinary
+} from '#services';
 
 
 const uploadDocument = asyncHandler(async (req, res) => { 

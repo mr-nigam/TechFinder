@@ -1,9 +1,8 @@
-const welcomeMessageTemplate = (user) => {
-    const fullName = `${user.first_name} ${user.last_name}`;
+const welcomeMessageTemplate = (username) => {
 
     return {
         text: `
-            Hello ${fullName},
+            Hello ${username},
 
             Welcome to TechFinder.
 
@@ -19,7 +18,7 @@ const welcomeMessageTemplate = (user) => {
 
         html: `
             <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-                <h2>Hello ${fullName},</h2>
+                <h2>Hello ${username},</h2>
 
                 <p>
                     Welcome to <strong>TechFinder</strong>.

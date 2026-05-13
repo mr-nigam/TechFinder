@@ -16,16 +16,21 @@ import {
     hasEmpty,
     isValidUUID,
     
-    uploadOnCloudinary,
     removeLocalFile,
 
     formatOwnAddress,
-    formatAddressAssets
+    formatAddressAssets,
+
+    parseAndValidateCoordinates
 } from '#shared';
 
 import {
     cleanupQueue
 } from '#queues';
+
+import {
+    uploadOnCloudinary
+} from '#services';
 
 
 const addAddress = asyncHandler(async (req, res) => {
@@ -525,46 +530,16 @@ const updateLocation = asyncHandler(async (req, res) => {
         );
     }
 
-    let {
+    const {
         lat,
         lng,
         accuracy_meters,
         source
-    } = req.body;
+    } = parseAndValidateCoordinates(
+        req.body
+    );
 
-    if(lat === undefined || lng === undefined){
-        throw new ApiError(
-            400,
-            "Give proper locations coordinates"
-        );
-    }
-
-    lat = Number(lat);
-    lng = Number(lng);
-
-    if(isNaN(lat) ||
-        isNaN(lng) || 
-        lat > 90 ||
-        lat < -90 ||
-        lng > 180 ||
-        lng < - 180
-    ){
-        throw new ApiError(
-            400,
-            "Invalid Lonigitude and Latitude coordinates"
-        );
-    }
-
-    const allowedSources = [
-        "gps",
-        "manual_pin",
-        "geocoded",
-        "admin"
-    ];
-
-    if(!allowedSources.includes(source)){
-        source = "gps";
-    }
+    let captured_at = req.body?.captured_at || null;
 
     const query = `
         UPDATE addresses

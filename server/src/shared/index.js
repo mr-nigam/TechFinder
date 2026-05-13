@@ -19,8 +19,10 @@ export {
 
 // cookies
 export {
-    getAccessCookieOptions,
-    getRefreshCookieOptions,
+    getAccessTokenCookieOptions,
+    getRefreshTokenCookieOptions,
+    setAuthCookies,
+    clearAuthCookies
 } from './utils/cookie.util.js';
 
 // validation
@@ -31,11 +33,6 @@ export {
     isValidEmail
 } from './utils/validation.util.js';
 
-// storage
-export {
-    uploadOnCloudinary,
-    deleteFromCloudinary,
-} from './services/storage.service.js';
 
 // address
 export {
@@ -53,3 +50,7 @@ export {
 } from './utils/technician.util.js';
 
 export {default as generateOtp} from './utils/generateOtp.util.js';
+
+export { 
+    default as parseAndValidateCoordinates
+} from './utils/location-validator.utils.js';

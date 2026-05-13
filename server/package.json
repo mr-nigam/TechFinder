@@ -36,9 +36,11 @@
     "#queues/*": "./src/queues/*",
 
     "#config/*": "./src/config/*",
+    "#repositories/*": "./src/repositories/*",
     "#middlewares/*": "./src/middlewares/*",
     "#lib/*": "./src/lib/*",
     "#bootstrap/*": "./src/bootstrap/*",
+    "#services": "./src/services/index.js",
   
     "#modules/*": "./src/modules/*",
     "#users/*": "./src/modules/users/*",

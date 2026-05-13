@@ -1,9 +1,8 @@
-const passwordResetMessageTemplate = (user) => {
-    const fullName = `${user.first_name} ${user.last_name}`;
+const passwordResetMessageTemplate = (username) => {
 
     return {
         text: `
-            Hello ${fullName},
+            Hello ${username},
 
             Your TechFinder account password was successfully reset.
 
@@ -17,7 +16,7 @@ const passwordResetMessageTemplate = (user) => {
 
         html: `
             <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-                <h2>Hello ${fullName},</h2>
+                <h2>Hello ${username},</h2>
 
                 <p>
                     Your <strong>TechFinder</strong> account password was successfully reset.

@@ -1,9 +1,8 @@
-const phoneChangedMessageTemplate = (user, newPhone) => {
-    const fullName = `${user.first_name} ${user.last_name}`;
-
+const phoneChangedMessageTemplate = (username, newPhone) => {
+    
     return {
         text: `
-            Hello ${fullName},
+            Hello ${username},
 
             Your TechFinder phone number was successfully updated.
 
@@ -20,7 +19,7 @@ const phoneChangedMessageTemplate = (user, newPhone) => {
 
         html: `
             <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-                <h2>Hello ${fullName},</h2>
+                <h2>Hello ${username},</h2>
 
                 <p>
                     Your <strong>TechFinder</strong> phone number was successfully updated.

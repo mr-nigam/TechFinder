@@ -1,22 +1,58 @@
 const isProduction =
     process.env.NODE_ENV === "production";
 
-const getAccessCookieOptions = () => ({
+const baseCookieOptions = {
     httpOnly: true,
     secure: isProduction,
     sameSite: "strict",
+};
+
+const getAccessTokenCookieOptions = () => ({
+    ...baseCookieOptions,
     maxAge: 15 * 60 * 1000, // 15 minutes
 });
 
-const getRefreshCookieOptions = () => ({
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: "strict",
+const getRefreshTokenCookieOptions = () => ({
+    ...baseCookieOptions,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 });
 
+const setAuthCookies = (
+    res,
+    accessToken,
+    refreshToken
+) => {
+
+    res.cookie(
+        "accessToken",
+        accessToken,
+        getAccessTokenCookieOptions()
+    );
+
+    res.cookie(
+        "refreshToken",
+        refreshToken,
+        getRefreshTokenCookieOptions()
+    );
+};
+
+const clearAuthCookies = (res) => {
+
+    res.clearCookie(
+        "accessToken",
+        baseCookieOptions
+    );
+
+    res.clearCookie(
+        "refreshToken",
+        baseCookieOptions
+    );
+};
+
 
 export {
-    getAccessCookieOptions,
-    getRefreshCookieOptions,
+    getAccessTokenCookieOptions,
+    getRefreshTokenCookieOptions,
+    setAuthCookies,
+    clearAuthCookies
 };

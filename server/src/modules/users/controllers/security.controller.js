@@ -11,8 +11,10 @@ import {
 
     generateAccessToken,
     generateRefreshToken,
-    getAccessCookieOptions,
-    getRefreshCookieOptions,
+    getAccessTokenCookieOptions,
+    getRefreshTokenCookieOptions,
+    setAuthCookies,
+    clearAuthCookies,
     
     isValidPhone,
     isValidEmail,
@@ -31,6 +33,9 @@ import {
     invalidateCaches
 } from '#infra';
 
+import {
+    verifyUserPassword
+} from '#services';
 
 
 const resetPassword = asyncHandler(async (req, res) => {
@@ -52,33 +57,13 @@ const resetPassword = asyncHandler(async (req, res) => {
         );
     }
 
-    let query = `
-        SELECT password
-        FROM users
-        WHERE id = $1
-        LIMIT 1;
-    `;
-
-    let result = await pool.query( query, [user.id]);
-
-    if(result.rowCount === 0){
-        throw new ApiError(
-            404,
-            "user not found"
-        );
-    }
-
-    let oldHashedpassword = result.rows[0].password;
-
-    const isMatch = await bcrypt.compare(oldPassword,oldHashedpassword);
-    if(!isMatch){
-        throw new ApiError(
-            401,
-            "Invalid credentials"
-        );
-    }
+    await verifyUserPassword(
+        user.id,
+        oldPassword
+    );
 
     const newHashedPassword = await hashPassword(newPassword);
+
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
@@ -103,14 +88,10 @@ const resetPassword = asyncHandler(async (req, res) => {
         user.id,
     ];
     
-    result = await pool.query(query, values);
-
-    if(result.rowCount === 0){
-        throw new ApiError(
-            404,
-            "invalid credentials"
-        );
-    }
+    await pool.query(
+        query,
+        values
+    );
 
     await invalidateCaches(
         user.id,
@@ -131,19 +112,15 @@ const resetPassword = asyncHandler(async (req, res) => {
     }catch(err){
         console.error("Queue error:", err.message);
     }
+    
+    setAuthCookies(
+        res,
+        accessToken,
+        refreshToken
+    );
 
     return res
         .status(200)
-        .cookie(
-            "accessToken",
-            accessToken,
-            getAccessCookieOptions()
-        )
-        .cookie(
-            "refreshToken",
-            refreshToken,
-            getRefreshCookieOptions()
-        )
         .json(
             new ApiResponse(
                 200,

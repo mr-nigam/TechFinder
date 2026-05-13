@@ -1,9 +1,8 @@
-const emailChangedMessageTemplate = (user, newEmail) => {
-    const fullName = `${user.first_name} ${user.last_name}`;
+const emailChangedMessageTemplate = (username, newEmail) => {
 
     return {
         text: `
-            Hello ${fullName},
+            Hello ${username},
 
             Your TechFinder email address has been successfully updated.
 
@@ -20,7 +19,7 @@ const emailChangedMessageTemplate = (user, newEmail) => {
 
         html: `
             <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-                <h2>Hello ${fullName},</h2>
+                <h2>Hello ${username},</h2>
 
                 <p>
                     Your <strong>TechFinder</strong> email address has been successfully updated.

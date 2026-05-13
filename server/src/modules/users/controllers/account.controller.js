@@ -1,11 +1,14 @@
 import bcrypt from 'bcrypt';
+
 import pool from 
 '#config/database/postgres.js';
 
 import {
     ApiError,
     ApiResponse,
-    asyncHandler
+    asyncHandler,
+    
+    clearAuthCookies,
 } from '#shared';
 
 import {
@@ -17,157 +20,48 @@ import{
     invalidateCaches
 } from '#infra';
 
+import {
+    verifyUserPassword,
+    processAccountStatusChange
+} from '#services';
+
 
 const deleteAccount = asyncHandler(async (req, res) => {
     const user = req.user;
     const technician = req.technician || null;
 
-    const password = req.body.password?.trim() || "";
-
-    if(!password){
-        throw new ApiError(
-            400,
-            "Please enter password"
-        );
-    }
-
-    let query = `
-        SELECT 
-            password
-        FROM users
-        WHERE id = $1;
-    `;
-
-    let result = await pool.query(query, [user.id]);
-
-    if(result.rows.length === 0){
-        throw new ApiError(
-            404,
-            "User not found"
-        );
-    }
-
-    let oldHashedpassword = result.rows[0].password;
-    let isMatch = await bcrypt.compare(password, oldHashedpassword);
-
-    if(!isMatch){
-        throw new ApiError(
-            401,
-            "Invalid credentials"
-        );
-    }
-
     const client = await pool.connect();
 
-    try{
-        
-        await client.query("BEGIN");
-
-        let query = `
-            UPDATE users
-            SET deleted_at = NOW(),
-                refresh_token = NULL
-            WHERE id = $1;
-        `;
-
-        let result = await client.query(query,[user.id]);
-        
-        if(result.rowCount === 0){
-            throw new ApiError(
-                400,
-                "Failed to delete user account"
-            );
-        }
-
-        if(technician){
-            let query = `
-                UPDATE technicians
-                SET deleted_at = NOW()
-                WHERE id = $1;
-            `;
-
-            let result = await client.query(query,[technician.id]);
-        
-            if(result.rowCount === 0){
-                throw new ApiError(
-                    400,
-                    "Failed to delete technician account"
-                );
-            }
-        }
-
-        await client.query("COMMIT");
-
-    }catch(err){
-        
-        try{
-            await client.query("ROLLBACK");
-        }catch(_) {}
-
-        throw new ApiError(
-            err.statusCode || 500,
-            err.message || "Failed to delete user account"
-        );
-        
-    }finally{
-
-        client.release();
-    }
     const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
 
-    try{
-        await cleanupQueue.add(
-            "user:delete",
-            {
-                userId: user.id 
-            },
-            {   
-                jobId: `user:delete:${user.id}`,
-                delay: THIRTY_DAYS
-            }
-        );    
-        console.log("Account scheduled for deactivation/deletion in 90 days.");
-    }catch(err){
-        console.error("Queue error:", err.message);
-    }
-    
-    try{
-        await emailQueue.add(
-            "request:user:delete",
-            { 
-                userId: user.id
-            },
-            {
-                jobId: `request:user:delete:${user.id}`
-            }
-        );
-        console.log("Email will be sent for Account deactivation/deletion in 90 days.");
-    }catch(err){
-        console.error("Queue error:", err.message);
-    }
+    const message =
+        await processAccountStatusChange({
 
-    res.clearCookie(
-        "accessToken",
-        {
-            httpOnly: true,
-            secure: true,
-            sameSite: "strict",
-        }
-    );
-    
-    res.clearCookie(
-        "refreshToken",
-        {
-            httpOnly: true,
-            secure: true,
-            sameSite: "strict",
-        }
-    );
+            user,
+            technician,
+            password: req.body.password,
+            client,
 
-    await invalidateCaches(
-        user.id,
-        technician?.id || null
-    );
+            statusField: "deleted_at",
+            actionName: "delete",
+
+            cleanupQueue,
+            cleanupJobName: "user:delete",
+            cleanupDelay: THIRTY_DAYS,
+
+            emailQueue,
+            emailJobName:
+                "request:user:delete",
+            emailQueueJobId:
+                "user:delete",
+
+            invalidateCaches,
+
+            successMessage:
+                "User deleted successfully"
+        });
+
+    clearAuthCookies(res);
 
     return res
         .status(200)
@@ -175,7 +69,7 @@ const deleteAccount = asyncHandler(async (req, res) => {
             new ApiResponse(
                 200,
                 {},
-                "User deleted successfully"
+                message
             )
         );
 });
@@ -184,152 +78,38 @@ const deactivateAccount = asyncHandler(async (req, res) => {
     const user = req.user;
     const technician = req.technician || null;
 
-    const password = req.body.password?.trim() || "";
-
-    if(!password){
-        throw new ApiError(
-            400,
-            "Please enter password"
-        );
-    }
-
-    let query = `
-        SELECT 
-            password
-        FROM users
-        WHERE id = $1;
-    `;
-
-    let result = await pool.query(query, [user.id]);
-
-    if(result.rows.length === 0){
-        throw new ApiError(
-            404,
-            "User not found"
-        );
-    }
-
-    let oldHashedpassword = result.rows[0].password;
-    let isMatch = await bcrypt.compare(password, oldHashedpassword);
-
-    if(!isMatch){
-        throw new ApiError(
-            401,
-            "Invalid credentials"
-        );
-    }
-
     const client = await pool.connect();
 
-    try{
-        
-        await client.query("BEGIN");
+    const NINETY_DAYS  = 90 * 24 * 60 * 60 * 1000;
 
-        let query = `
-            UPDATE users
-            SET deactivated_at = NOW(),
-                refresh_token = NULL
-            WHERE id = $1;
-        `;
+    const message =
+        await processAccountStatusChange({
 
-        let result = await client.query(query,[user.id]);
-        
-        if(result.rowCount === 0){
-            throw new ApiError(
-                400,
-                "Failed to deactivate user account"
-            );
-        }
+            user,
+            technician,
+            password: req.body.password,
+            client,
 
-        if(technician){
-            let query = `
-                UPDATE technicians
-                SET deactivated_at = NOW()
-                WHERE id = $1;
-            `;
+            statusField: "deactivated_at",
+            actionName: "deactivate",
 
-            let result = await client.query(query,[technician.id]);
-        
-            if(result.rowCount === 0){
-                throw new ApiError(
-                    400,
-                    "Failed to deactivate technician account"
-                );
-            }
-        }
+            cleanupQueue,
+            cleanupJobName: "user:deactivate",
+            cleanupDelay: NINETY_DAYS,
 
-        await client.query("COMMIT");
+            emailQueue,
+            emailJobName:
+                "request:deactivate:account",
+            emailQueueJobId:
+                "user:deactivated",
 
-    }catch(err){
-        
-        try{
-            await client.query("ROLLBACK");
-        }catch(_) {}
+            invalidateCaches,
+            
+            successMessage:
+                "User deactivated successfully"
+        });
 
-        throw new ApiError(
-            err.statusCode || 500,
-            err.message || "Failed to deactivate user account"
-        );
-        
-    }finally{
-
-        client.release();
-    }
-    const NINETY_DAYS = 90 * 24 * 60 * 60 * 1000;
-
-    try{
-        await cleanupQueue.add(
-            "user:deactivate",
-            { 
-                userId: user.id 
-            },
-            {   
-                jobId: `user:deactivate:${user.id}`,
-                delay: NINETY_DAYS
-            }
-        );    
-        console.log("Account scheduled for deactivation/deletion in 90 days.");
-    }catch(err){
-        console.error("Queue error:", err.message);
-    }
-    
-    try{
-        await emailQueue.add(
-            "request:deactivate:account",
-            { 
-                userId: user.id
-            },
-            {
-                jobId: `user:deactivated:${user.id}`
-            }
-        );
-        console.log("Email will be sent for Account deactivation/deletion in 90 days.");
-    }catch(err){
-        console.error("Queue error:", err.message);
-    }
-
-    res.clearCookie(
-        "accessToken",
-        {
-            httpOnly: true,
-            secure: true,
-            sameSite: "strict",
-        }
-    );
-    
-    res.clearCookie(
-        "refreshToken",
-        {
-            httpOnly: true,
-            secure: true,
-            sameSite: "strict",
-        }
-    );
-
-    await invalidateCaches(
-        user.id,
-        technician?.id || null
-    );
+    clearAuthCookies(res);
 
     return res
         .status(200)
@@ -337,7 +117,7 @@ const deactivateAccount = asyncHandler(async (req, res) => {
             new ApiResponse(
                 200,
                 {},
-                "User deactivated successfully"
+                message
             )
         );
 });

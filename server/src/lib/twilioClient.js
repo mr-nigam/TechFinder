@@ -8,7 +8,6 @@ const {
 
 if(!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN){
     throw new Error(
-        500,
         'Missing Twilio credentials'
     );
 }

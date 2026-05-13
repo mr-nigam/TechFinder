@@ -6,33 +6,24 @@ from '#lib/emailTransporter.js';
 import passwordResetMessageTemplate 
 from '../templates/password-reset.template.js';
 
+import findActiveUserById from 
+'#repositories/user.repository.js';
+
 
 const passwordReset = async (data) => {
-    const query = `
-        SELECT
-            email,
-            first_name,
-            last_name
-        FROM users
-        WHERE id = $1 AND 
-            deleted_at IS NULL AND
-            deactivated_at IS NULL;
-    `;
-
-    const result = await pool.query(
-        query,
-        [data.userId]
+    const user = await findActiveUserById(
+        data.userId
     );
 
-    if(result.rowCount === 0){
+    if(!user){
         throw new Error(
-            "User not found"
+            'User not found'
         );
     }
 
-    const user = result.rows[0];
-
-    const message = passwordResetMessageTemplate(user);
+    const message = passwordResetMessageTemplate(
+        user.username
+    );
 
     await transporter.sendMail({
         from: `"TechFinder" <${process.env.EMAIL_USER}>`,
