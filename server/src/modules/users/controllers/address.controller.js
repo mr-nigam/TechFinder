@@ -548,7 +548,7 @@ const updateLocation = asyncHandler(async (req, res) => {
         SET location = ST_SetSRID(
                 ST_MakePoint($1, $2), 
                 4326
-            ),
+            )::geography,
             location_accuracy_meters = $3,
             location_source  = $4
         WHERE id = $5

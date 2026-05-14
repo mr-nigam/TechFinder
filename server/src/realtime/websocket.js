@@ -1,9 +1,7 @@
+import 'dotenv/config';
 import express from "express";
 import http from "http";
 import { WebSocketServer } from "ws";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const app = express();
 
@@ -69,6 +67,7 @@ const generateClientId = () => {
 /**
  * Handle WebSocket connections
  */
+
 wss.on("connection", (ws, req) => {
 
     const clientId = generateClientId();

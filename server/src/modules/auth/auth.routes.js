@@ -6,11 +6,14 @@ import {
     register,
     logIn,
     logOut,
-    refreshAccessToken,
+    refreshAccessToken
+} from './auth.controller.js';
+
+import {
     forgotPassword,
     verifyForgotOTP,
     resetPassword
-} from './auth.controller.js';
+} from './controllers/password.controller.js';
 
 
 const router = Router();

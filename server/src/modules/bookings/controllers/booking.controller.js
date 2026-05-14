@@ -1,7 +1,6 @@
 import pool from 
 '#config/database/postgres.js';
 
-
 import { 
     asyncHandler,
     ApiError,
@@ -16,12 +15,26 @@ import {
     emailQueue
 } from '#queues';
         
+import {
+    validateBookingData
+} from '../validator/booking.validate.js';
+
+import {
+    searchTechnicians
+} from '../services/booking.service.js';
 
 // ============================
 // DISCOVERY PHASE
 // ============================
 
-const searchTechnician = asyncHandler(async (req,res) => { });
+const searchTechnicians = asyncHandler(async (req,res) => { 
+    const user = req.user;
+
+    const bookingData = 
+        validateBookingData(req?.body); 
+
+
+});
 
 const getNearbyTechnicians = asyncHandler(async (req, res) => { });
 

@@ -10,6 +10,10 @@ import {
     validateReviewData
 } from '#shared';
 
+import {
+    getTechnicianReviews
+} from '#repositories/review.repository.js';
+
 
 const reviews_fields = `
     id,
@@ -300,49 +304,20 @@ const getReviews = asyncHandler(async (req,res) => {
         sortBy = "created_at";
     }
 
-    const query = `
-        SELECT 
-            reviewer.username AS reviewer_username,
-            reviewer.profile_picture_url, 
-            r.technician_id,
-            r.service_type_name,
-            r.booking_type,
-            r.rating,
-            r.title,
-            r.body,
-            r.is_edited,
-            r.created_at
-        FROM reviews r
-        JOIN technicians t
-            ON t.id = r.technician_id
-        JOIN users technician_user
-            ON t.user_id = technician_user.id
-        JOIN users reviewer
-            ON r.user_id = reviewer.id
-        WHERE technician_user.username = $1
-        ORDER BY ${sortBy} ${sortType}
-        LIMIT $2 OFFSET $3;
-    `;
-    
-    const values = [
-        username,
+    const reviews = await getTechnicianReviews({
         limit,
-        skip
-    ];
-
-    const result = await pool.query(
-        query,
-        values
-    );
+        sortBy,
+        sortType,
+        username,
+        offset
+    });
 
     return res
         .status(200)
         .json(
             new ApiResponse(
                 200,
-                {
-                    reviews: result.rows
-                },
+                { reviews },
                 "Reviews fetched successfully"
             )
         );

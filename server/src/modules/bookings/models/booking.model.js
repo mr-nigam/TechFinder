@@ -30,17 +30,16 @@ const createBookingsTable = async () => {
                     REFERENCES phones(id)
                     ON DELETE SET NULL,
                 
-                -- remove
-                service_id UUID
-                    REFERENCES services(id)
-                    ON DELETE SET NULL,
-                
                 payment_id UUID
                     REFERENCES payments(id)
                     ON DELETE SET NULL,
                 
-                service_type_id UUID
-                    REFERENCES service_types(id)
+                service_category_id UUID
+                    REFERENCES service_categories(id)
+                    ON DELETE SET NULL,
+                
+                service_id UUID
+                    REFERENCES services(id)
                     ON DELETE SET NULL,
 
                 booking_type VARCHAR(20) NOT NULL
@@ -78,9 +77,6 @@ const createBookingsTable = async () => {
                 technician_payout NUMERIC(8,2) NOT NULL,
                 total_amount NUMERIC(8,2) NOT NULL,
 
-                --remove
-                discount_amount NUMERIC(8,2) NOT NULL,
-                
                 payment_status VARCHAR(20) NOT NULL
                     DEFAULT 'pending'
                     CHECK(
@@ -93,15 +89,6 @@ const createBookingsTable = async () => {
                     ),
 
                 cancellation_reason TEXT,
-
-                --remove it
-                cancelled_by VARCHAR(15)
-                    CHECK(
-                        cancelled_by IN (
-                            'user',
-                            'technician'
-                        )
-                    ),
 
                 scheduled_for TIMESTAMPTZ,
 

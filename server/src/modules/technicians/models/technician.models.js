@@ -16,7 +16,12 @@ const createTechniciansTable = async () => {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
         user_id UUID UNIQUE NOT NULL
-          REFERENCES users(id) ON DELETE CASCADE,
+          REFERENCES users(id) 
+          ON DELETE CASCADE,
+
+        service_category_id UUID
+          REFERENCES service_categories(id) 
+          ON DELETE SET NULL,
 
         verified_by UUID
           REFERENCES users(id)
@@ -25,6 +30,7 @@ const createTechniciansTable = async () => {
         specialization VARCHAR(100) NOT NULL,
         about TEXT,
 
+        
         search_vector tsvector
 
         languages_spoken TEXT[] DEFAULT '{}',
@@ -62,6 +68,7 @@ const createTechniciansTable = async () => {
               )
             )
           DEFAULT 'available',
+        
         account_status VARCHAR(20)
           CHECK (
             account_status IN (
@@ -71,10 +78,26 @@ const createTechniciansTable = async () => {
             )
           )
         DEFAULT 'active',
-          service_radius_km INT DEFAULT 15
+        
+        highest_Qulification VARCHAR(20)
+          CHECK (
+            highest_Qulification IN (
+              'high_school',
+              'graduate',
+              'masters',
+              'doctorate'
+            )
+          )
+        DEFAULT 'active',
+
+        service_radius_km INT DEFAULT 15
           CHECK (service_radius_km BETWEEN 1 AND 100),
 
-        last_seen_at TIMESTAMPTZ,
+        last_seen_at TIMESTAMPTZ, 
+
+        hourly_rate NUMERIC(10,2) NOT NULL
+          CHECK (hourly_rate >=0 )
+          DEFAULT 0,
 
         current_location GEOGRAPHY(POINT, 4326),
         current_location_captured_at TIMESTAMPTZ,
@@ -88,18 +111,6 @@ const createTechniciansTable = async () => {
               'admin'
             )
           ),
-
-        average_rating NUMERIC(3,2) DEFAULT 0
-          CHECK (average_rating BETWEEN 0 AND 5),
-
-        total_reviews INT DEFAULT 0
-          CHECK (total_reviews >= 0),
-
-        total_jobs_completed INT DEFAULT 0
-          CHECK (total_jobs_completed >= 0),
-
-        total_money_earned NUMERIC(12,2) NOT NULL DEFAULT 0
-          CHECK (total_money_earned >= 0),
 
         deleted_at TIMESTAMPTZ,
         deactivated_at TIMESTAMPTZ,

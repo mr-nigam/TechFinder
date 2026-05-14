@@ -62,3 +62,9 @@ export {
 export {
     default as validateReviewData
 } from './utils/validate-review-data.js';
+
+export {
+    normalizeRegisterData,
+    validateRegisterData,
+    generateHashedPassword
+} from './utils/auth.validator.js';

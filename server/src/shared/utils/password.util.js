@@ -19,7 +19,7 @@ const hashPassword = async (password) => {
     else if (ch !== " ") hasSpecial = true;
   }
 
-  if (!hasDigit || !hasLower || !hasUpper || !hasSpecial) {
+  if(!hasDigit || !hasLower || !hasUpper || !hasSpecial){
     throw new ApiError(
       400,
       "Password must contain uppercase, lowercase, digit and special character"

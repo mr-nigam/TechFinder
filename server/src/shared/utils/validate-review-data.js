@@ -1,6 +1,6 @@
 import {
     ApiError
-} from '#shared';
+} from './apiError.js';
 
 
 const validateReviewData = (data) => {

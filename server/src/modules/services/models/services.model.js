@@ -27,6 +27,10 @@ const createServicesTable = async() => {
                 display_order INT DEFAULT 0
                     CHECK (display_order >= 0),
 
+                base_fee NUMERIC(8,2) NOT NULL,
+                tax_amount NUMERIC(8,2) NOT NULL,
+                technician_payout NUMERIC(8,2) NOT NULL,
+
                 deleted_at TIMESTAMPTZ,
                 
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,

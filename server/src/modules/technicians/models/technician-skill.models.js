@@ -8,7 +8,6 @@ const createTechnicianSkillsTable = async() => {
     try{
         await pool.query(`
             CREATE TABLE IF NOT EXISTS technician_skills(
-                -- Keys
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
                 technician_id UUID NOT NULL
@@ -17,7 +16,8 @@ const createTechnicianSkillsTable = async() => {
                 service_id UUID NOT NULL
                     REFERENCES services(id) ON DELETE CASCADE,
 
-                -- Skill Details 
+                service_name VARCHAR(100) NOT NULL,
+
                 years_of_experience NUMERIC(4,1) DEFAULT 0
                     CHECK (years_of_exp >= 0),
                 
@@ -30,24 +30,19 @@ const createTechnicianSkillsTable = async() => {
                     )),
 
                 hourly_rate NUMERIC(10,2) NOT NULL
-                    CHECK (hourly_rate BETWEEN 0 AND 60),
+                    CHECK (hourly_rate >=0 )
+                    DEFAULT 0,
 
-                -- Settings
-                is_active BOOLEAN DEFAULT TRUE,
-
-                -- Deleteion Status
-                is_deleted BOOLEAN DEFAULT FALSE,
+                deleted_at TIMESTAMPTZ,
                 
-                -- Audit
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 
-                -- Constraints
                 UNIQUE(technician_id, service_id)
             );
         `)
         
-        // Indexing   
+        // Indexing
         await pool.query(`
             CREATE INDEX IF NOT EXISTS idx_tech_skills_technician
             ON technician_skills(technician_id);
