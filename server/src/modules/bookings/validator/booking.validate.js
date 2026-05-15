@@ -9,8 +9,7 @@ const ALLOWED_BOOKING_TYPES = [
     "scheduled"
 ];
 
-const validateBookingData = async (body) =>{
-
+const validateBookingData = (body) =>{
     const { 
         addressId,
         serviceId,
@@ -69,4 +68,4 @@ const validateBookingData = async (body) =>{
 };
 
 
-validateBookingData
+export default validateBookingData;

@@ -12,7 +12,11 @@ const getCache = async(key) => {
     }
 };
 
-const setCache = async(key, value, ttl = 600) => {
+const setCache = async(
+    key, 
+    value, 
+    ttl = 600
+) => {
     try{
         await infraRedis.set(
             key,
@@ -54,7 +58,10 @@ const deleteMultipleCache = async(keys) => {
     }
 };
 
-const invalidateCaches = async (userId, technicianId) => {
+const invalidateCaches = async (
+    userId, 
+    technicianId
+) => {
    const cacheKeys = [
         `profile:user:${userId}`,
         technicianId && `profile:technician:${technicianId}`,
@@ -64,11 +71,74 @@ const invalidateCaches = async (userId, technicianId) => {
     await deleteMultipleCache(cacheKeys);
 };
 
+const geoAdd = async (
+    key,
+    longitude,
+    latitude,
+    member
+) => {
+    try {
+        await infraRedis.geoAdd(
+            key,
+            {
+                longitude: Number(longitude),
+                latitude: Number(latitude),
+                member: String(member)
+            }
+        );
+
+        return true;
+    } catch (err) {
+        console.error(
+            "Redis GEOADD failed:",
+            err.message
+        );
+
+        return false;
+    }
+};
+
+const geoSearch = async (
+    categoryId,
+    lng,
+    lat
+) => {
+    const searchKey = 
+        `tech:geo:${categoryId}`;
+
+    try{
+        return await infraRedis.geoSearch(
+            searchKey,
+            {
+                longitude: Number(lng),
+                latitude: Number(lat),
+            },
+            {
+                radius: 10000,
+                unit: 'm',
+                WITHDIST: true,
+                COUNT: 50,
+                SORT: 'ASC'
+            }
+        );
+        
+    }catch(err){
+        console.error(
+            `[Redis GEOSEARCH Failed] key= ${searchKey}`,
+            err.message
+        );
+
+        return [];
+    }
+};
+
 
 export {
     getCache,
     setCache,
     deleteCache,
     deleteMultipleCache,
-    invalidateCaches
+    invalidateCaches,
+    geoAdd,
+    geoSearch
 }

@@ -30,7 +30,6 @@ const createTechniciansTable = async () => {
         specialization VARCHAR(100) NOT NULL,
         about TEXT,
 
-        
         search_vector tsvector
 
         languages_spoken TEXT[] DEFAULT '{}',

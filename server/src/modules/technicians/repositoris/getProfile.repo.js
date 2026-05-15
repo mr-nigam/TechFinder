@@ -8,20 +8,13 @@ import {
 import {
     setCache,
     geoAdd
-} from '#infra/cache/cache.js';
+} from '#infra';
 
 /*
     tu = technician_user,
     tpm = technician_performance_metric
     u = user
-    a = address
     ts = technician_skills,
-
-
-    approved
-    active
-    online
-    available
 */
 
 const technician_fields = [
@@ -66,9 +59,7 @@ const technician_fields = [
     `
 ];
 
-
 const startWorking = async(technicianId)=>{
-
     const query = `
         SELECT ${technician_fields}
         FROM technicians t
@@ -86,6 +77,7 @@ const startWorking = async(technicianId)=>{
         WHERE t.id = $1
             AND t.deleted_at IS NULL
             AND t.deactivated_at IS NULL
+
         GROUP BY
             t.id,
             tu.id,
@@ -105,7 +97,7 @@ const startWorking = async(technicianId)=>{
     }
 
     const profile = result.rows[0];
-    
+
     if(!profile.verified_at){
         throw new ApiError(
             403,
@@ -154,21 +146,23 @@ const startWorking = async(technicianId)=>{
         ranking_score: profile.ranking_score,
         hourly_rate: profile.hourly_rate,
         profile_picture_url: profile.profile_picture_url,
-        service_category_id:profile.service_category_id
+        service_category_id: profile.service_category_id
     };
 
     const cardCacheKey =
-        `technician:card:${technicianId}`;
+        `tech:card:${technicianId}`;
 
     const profileCacheKey =
-        `technician:profile:${technicianId}`;
+        `tech:profile:${technicianId}`;
+
+    const categoryId = profile.service_category_id;
 
     const geoKey =
-        "geo:technicians:online";
+        `tech:geo:${categoryId}`;
 
     
-    const cardCacheTTL = 15 * 60; // 15 mins
-    const profileCacheTTL = 60 * 60; // 1 hour
+    const cardCacheTTL = 60 * 60; // 1 hour
+    const profileCacheTTL = 120 * 60; // 2 hour
 
     /*
         extract coordinates

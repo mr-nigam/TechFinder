@@ -5,5 +5,7 @@ export {
     setCache,
     deleteCache,
     deleteMultipleCache,
-    invalidateCaches
+    invalidateCaches,
+    geoAdd,
+    geoSearch
 } from './cache/cache.js';
