@@ -6,13 +6,8 @@ import {
     ApiError
 } from '#shared';
 
-import {
-    getCache
-} from '#infra';
-
-import {
-    getTechnicianProfile
-} from '#technicians/services/get-profile.service.js';
+import getTechnicianProfile from 
+'../services/get-technician-profile.service.js';
 
 
 const handleGetTechnicianProfile =
@@ -28,24 +23,9 @@ asyncHandler(async (ws, data) => {
         );
     }
 
-    const cacheKey =
-        `tech:profile:${technicianId}`;
-
-    let technician = null;
-
-    try{
-        technician = await getCache(
-            cacheKey
-        );
-
-    }catch {}
-
-    if(!technician){
-        technician =
-            await getTechnicianProfile(
-                technicianId
-            );
-    }
+    const technician = await getTechnicianProfile(
+        data.technicianId
+    );
 
     send(ws, {
         event:
@@ -58,6 +38,4 @@ asyncHandler(async (ws, data) => {
 });
 
 
-export {
-    handleGetTechnicianProfile
-};
+export default handleGetTechnicianProfile;

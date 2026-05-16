@@ -10,27 +10,85 @@ import rankTechnicians from
 import mapTechnicianProfiles from
 '../mappers/technician.mapper.js';
 
-import {
-    ApiError
-} from '#shared';
+import getAddressCoordinates from 
+'../repositories/address.repos.js';
+
+import getTechnicians from
+'../repositories/get-nearby-technicians.repo.js';
 
 import {
     geoSearch
 } from '#infra';
 
+import {
+    cacheSearchResults,
+    getCachedSearchPage  
+} from '../bookingRedis/cache.js';
 
-const MAX_DISTANCE_METERS = 10000; // 10km
 
 const searchNearbyTechnicians = async (
     userId,
     bookingData
 ) => {
 
+    if(bookingData.searchSessionId){
+        return getCachedSearchPage(
+            bookingData.searchSessionId,
+            bookingData.page,
+            bookingData.limit
+        );
+    }
+
     const { lng, lat } =
-    await getAddressCoordinates(
-        bookingData.addressId,
-        userId
+        await getAddressCoordinates(
+            bookingData.addressId,
+            userId
+        );
+
+    let technicians =
+        await getNearbyTechniciansFromRedis(
+            lng,
+            lat,
+            bookingData.serviceCategoryId
+        );
+    
+    if(technicians.length < 5){
+        technicians = await getNearbyTechniciansFromDB(
+            lng,
+            lat,
+            bookingData.serviceCategoryId
+        );
+    }
+
+    if(!technicians.length){
+        return [];
+    }
+
+    const searchSessionId =
+        crypto.randomUUID();
+
+    await cacheSearchResults(
+        searchSessionId,
+        technicians
     );
+
+    const data = await getCachedSearchPage(
+        searchSessionId,
+        bookingData.page,
+        bookingData.limit
+    );
+
+    return {
+        data,
+        searchSessionId
+    };
+};
+
+const getNearbyTechniciansFromRedis = async (
+    lng,
+    lat,
+    serviceCategoryId
+) => {
 
     /**
      * Expected format from geoSearch:
@@ -41,7 +99,7 @@ const searchNearbyTechnicians = async (
      */
 
     const nearbyTechs = await geoSearch(
-        bookingData.serviceCategoryId,
+        serviceCategoryId,
         lng,
         lat
     );
@@ -67,5 +125,23 @@ const searchNearbyTechnicians = async (
     return rankedProfiles;
 };
 
+const getNearbyTechniciansFromDB = async (
+    lng,
+    lat,
+    serviceCategoryId
+) => {
 
-export default searchNearbyTechnicians;
+    const technicians = await getTechnicians(
+        lng,
+        lat,
+        serviceCategoryId
+    );
+
+    const rankedProfiles =
+        rankTechnicians(technicians);
+
+    return rankedProfiles;
+};
+
+
+export default searchNearbyTechnicians; 

@@ -1,6 +1,10 @@
 import pool from 
 '#config/database/postgres.js';
 
+import { 
+    ApiError
+} from '#shared';
+
 
 const getAddressCoordinates = async (
     addressId,
@@ -33,5 +37,6 @@ const getAddressCoordinates = async (
         lat: Number(result.rows[0].latitude)
     };
 };
+
 
 export default getAddressCoordinates;

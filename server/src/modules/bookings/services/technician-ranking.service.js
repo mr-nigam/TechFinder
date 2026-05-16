@@ -1,3 +1,5 @@
+const MAX_DISTANCE_METERS = 10000; // 10km
+
 const rankTechnicians = (
     profiles
 ) => {

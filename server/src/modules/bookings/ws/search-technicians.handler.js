@@ -8,8 +8,7 @@ import send from
 '#realtime/utils/send.js';
 
 import { 
-    asyncHandler,
-    ApiError
+    asyncHandler
 } from '#shared';
 
 
@@ -27,9 +26,8 @@ const handleSearchTechnicians = asyncHandler(async (ws,data) => {
     
     // No technicians found
     if(!technicians.length){
-        send(ws, {
-            event:
-                "No nearby technicians found",
+        return send(ws, {
+            event: "no_nearby_technicians_found",
             data: {
                 technicians: []
             }
@@ -40,12 +38,13 @@ const handleSearchTechnicians = asyncHandler(async (ws,data) => {
         event: "search_technicians_success",
         data: {
             total: technicians.length,
-            technicians
+            data: {
+                data
+            }
         }
     });
+
 });
 
 
-export {
-    handleSearchTechnicians
-};
+export default handleSearchTechnicians;

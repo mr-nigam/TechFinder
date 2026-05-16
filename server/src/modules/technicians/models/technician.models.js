@@ -120,15 +120,14 @@ const createTechniciansTable = async () => {
     `);
 
     await pool.query(`
-      CREATE INDEX IF NOT EXISTS idx_tech_search_rank
-      ON technicians (
-        average_rating DESC,
-        total_jobs_completed DESC
-      )
-      WHERE verified_at IS NOT NULL
-        AND status = 'online'
-        AND deleted_at IS NULL
-        AND deactivated_at IS NULL;
+      CREATE INDEX idx_technicians_search_filters
+        ON technicians (
+            service_category_id,
+            verification_status,
+            status,
+            availability_status,
+            account_status
+      );
     `);
     
     await pool.query(`
@@ -141,11 +140,6 @@ const createTechniciansTable = async () => {
       CREATE INDEX idx_technician_search
       ON technicians
       USING GIN(search_vector);
-    `);
-
-    await pool.query(`
-      CREATE INDEX IF NOT EXISTS idx_tech_status
-      ON technicians(status);
     `);
 
     await createUpdatedAtTrigger('technicians');

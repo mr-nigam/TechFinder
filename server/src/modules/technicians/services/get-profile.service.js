@@ -23,7 +23,7 @@ import {
 } from '../repositoris/get-coordinates.repo.js';
 
 
-const getTechnicianProfile = async(
+const getTechnicianProfileFromDB = async(
     technicianId
 ) => {
 
@@ -68,4 +68,4 @@ const getTechnicianProfile = async(
 };
 
 
-export default getTechnicianProfile;
+export default getTechnicianProfileFromDB;

@@ -12,6 +12,34 @@ const getCache = async(key) => {
     }
 };
 
+const getManyCache = async (keys) => {
+
+    const pipeline =
+        infraRedis.pipeline();
+
+    keys.forEach((key) => {
+        pipeline.get(key);
+    });
+
+    const results =
+        await pipeline.exec();
+
+    return results.map(
+        ([error, value]) => {
+
+            if (error || !value) {
+                return null;
+            }
+
+            try{
+                return JSON.parse(value);
+            }catch{
+                return null;
+            }
+        }
+    );
+};
+
 const setCache = async(
     key, 
     value, 
@@ -135,6 +163,7 @@ const geoSearch = async (
 
 export {
     getCache,
+    getManyCache,
     setCache,
     deleteCache,
     deleteMultipleCache,

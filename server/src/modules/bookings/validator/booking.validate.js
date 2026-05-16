@@ -16,7 +16,9 @@ const validateBookingData = (body) =>{
         phoneType = "primary",
         phoneId,
         bookingType,
-        serviceCategoryId
+        serviceCategoryId,
+        page = 1,
+        limit = 10
     } = body;
 
      const normalizedPhoneType =
@@ -57,11 +59,25 @@ const validateBookingData = (body) =>{
         );
     }
 
+    const normalizedLimit = Math.min(
+        Math.max(parseInt(limit) || 10, 1),
+        20
+    );
+    
+    const normalizedPage = Math.max(
+        parseInt(page) || 1, 1
+    );
+    
+    const skip = (normalizedPage-1)*normalizedLimit;
+
     return {
         addressId,
         serviceId,
         serviceCategoryId,
         phoneId,
+        skip,
+        limit: normalizedLimit,
+        page: normalizedPage,
         phoneType: normalizedPhoneType,
         bookingType: normalizedBookingType
     };

@@ -1,7 +1,7 @@
 export {
-    searchTechnicians
+    default  as searchTechnicians
 } from './search-technicians.handler.js';
 
 export {
-    handleGetTechnicianProfile
+    default as handleGetTechnicianProfile
 } from './get-technician-profile.hanlder.js';

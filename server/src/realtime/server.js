@@ -94,6 +94,8 @@ wss.on("connection", (ws, req) => {
                 data
             } = parsed;
             
+            data.clientId = clientId;
+            
             switch (event){
 
                 case "search_technicians":
