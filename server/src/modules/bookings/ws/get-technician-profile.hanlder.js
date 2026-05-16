@@ -34,7 +34,6 @@ asyncHandler(async (ws, data) => {
             technician
         }
     });
-
 });
 
 

@@ -95,7 +95,7 @@ wss.on("connection", (ws, req) => {
             } = parsed;
             
             data.clientId = clientId;
-            
+
             switch (event){
 
                 case "search_technicians":
@@ -107,6 +107,13 @@ wss.on("connection", (ws, req) => {
                 
                 case "technician_profile":
                     await handleGetTechnicianProfile(
+                        ws,
+                        data
+                    )
+                    break;
+                
+                case "send_booking_request":
+                    await handleSendBookingRequest(
                         ws,
                         data
                     )
