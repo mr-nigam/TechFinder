@@ -117,7 +117,7 @@ const geoSearch = async (
                 radius: 10000,
                 unit: 'm',
                 WITHDIST: true,
-                COUNT: 50,
+                COUNT: 100,
                 SORT: 'ASC'
             }
         );

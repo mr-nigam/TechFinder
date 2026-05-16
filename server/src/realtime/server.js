@@ -3,17 +3,20 @@ import express from "express";
 import http from "http";
 import { WebSocketServer } from "ws";
 
+import {
+    handleSearchTechnicians,
+    handleGetTechnicianProfile
+} from '#modules/bookings/ws/index.js';
+
+
 const app = express();
 
-/**
- * Basic middleware
- */
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/**
- * Health check route
- */
+
+//  Health check route
 app.get("/", (req, res) => {
     res.status(200).json({
         success: true,
@@ -21,22 +24,17 @@ app.get("/", (req, res) => {
     });
 });
 
-/**
- * Create HTTP server
- */
 const server = http.createServer(app);
 
-/**
- * Create WebSocket server
- */
 const wss = new WebSocketServer({
     server,
     clientTracking: true,
 });
 
-/**
- * Store connected clients
- */
+
+
+// Store connected clients
+
 const clients = new Map();
 
 /**
@@ -46,12 +44,12 @@ const broadcast = (data, exclude = null) => {
 
     const message = JSON.stringify(data);
 
-    for (const [clientId, client] of clients.entries()) {
+    for(const [clientId, client] of clients.entries()){
 
-        if (
+        if(
             client.readyState === client.OPEN &&
             client !== exclude
-        ) {
+        ){
             client.send(message);
         }
     }
@@ -76,10 +74,7 @@ wss.on("connection", (ws, req) => {
 
     console.log(`Client connected: ${clientId}`);
 
-    /**
-     * Send initial connection payload
-     */
-    
+    // Send initial connection payload
     ws.send(
         JSON.stringify({
             type: "connection",
@@ -88,49 +83,33 @@ wss.on("connection", (ws, req) => {
         })
     );
 
-    /**
-     * Notify others
-     */
-    broadcast(
-        {
-            type: "user_joined",
-            clientId,
-        },
-        ws
-    );
-
-    /**
-     * Handle incoming messages
-     */
     ws.on("message", async (message) => {
 
-        try {
+        try{
 
-            const parsedMessage = JSON.parse(
-                message.toString()
-            );
+            const parsed = JSON.parse(message);
 
-            console.log(
-                `Message from ${clientId}:`,
-                parsedMessage
-            );
+            const {
+                event,
+                data
+            } = parsed;
+            
+            switch (event){
 
-            /**
-             * Example message types
-             */
-            switch (parsedMessage.type) {
-
-                case "chat_message":
-
-                    broadcast({
-                        type: "chat_message",
-                        clientId,
-                        message: parsedMessage.message,
-                        createdAt: new Date(),
-                    });
-
+                case "search_technicians":
+                    await handleSearchTechnicians(
+                        ws,
+                        data
+                    );
                     break;
-
+                
+                case "technician_profile":
+                    await handleGetTechnicianProfile(
+                        ws,
+                        data
+                    )
+                    break;
+                
                 case "ping":
 
                     ws.send(
@@ -151,14 +130,14 @@ wss.on("connection", (ws, req) => {
                     );
             }
 
-        } catch (error) {
-
-            console.error("Message handling error:", error);
-
+        }catch(err){
+            console.error("Message handling error:", err);
             ws.send(
                 JSON.stringify({
-                    type: "error",
-                    message: "Invalid JSON format",
+                    event: "error",
+                    data: {
+                        message: err.message
+                    }
                 })
             );
         }
@@ -173,9 +152,7 @@ wss.on("connection", (ws, req) => {
         ws.isAlive = true;
     });
 
-    /**
-     * Handle disconnect
-     */
+
     ws.on("close", () => {
 
         console.log(`Client disconnected: ${clientId}`);
@@ -188,9 +165,6 @@ wss.on("connection", (ws, req) => {
         });
     });
 
-    /**
-     * Handle errors
-     */
     ws.on("error", (error) => {
 
         console.error(

@@ -5,7 +5,7 @@ import validateBookingData from
 '../validator/booking.validate.js';
 
 import searchNearbyTechnicians from 
-'../services/booking.service.js';
+'../services/search-technicians.service.js';
 
 import { 
     asyncHandler,
@@ -35,6 +35,26 @@ const searchTechnicians = asyncHandler(async (req,res) => {
             bookingData
         );
     
+    // No technicians found
+    if(!nearbyTechs.length){
+        return res.status(200).json({
+            success: true,
+            message: "No nearby technicians found",
+            technicians: []
+        });
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    profiles: nearbyTechs
+                },
+                "Nearby technicians data fecthed successfully"
+            )
+        )
 });
 
 const getAvailableSlots = asyncHandler(async (req, res) => { });
