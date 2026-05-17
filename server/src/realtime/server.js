@@ -1,12 +1,22 @@
 import 'dotenv/config';
-import express from "express";
-import http from "http";
-import { WebSocketServer } from "ws";
+import express from 'express';
+import http from 'http';
+import { WebSocketServer } from 'ws';
 
 import {
     handleSearchTechnicians,
-    handleGetTechnicianProfile
-} from '#modules/bookings/ws/index.js';
+    handleGetTechnicianProfile,
+    handleSendBookingRequest,
+    handleBookingRequestResponse
+} from '#modules/bookings/realtime/index.js';
+
+import {
+    addSocket,
+    removeSocket
+} from './utils/sockets-manager.js';
+
+import broadcast from 
+'./utils/broadcast.realtime.js';
 
 
 const app = express();
@@ -32,28 +42,9 @@ const wss = new WebSocketServer({
 });
 
 
-
 // Store connected clients
 
 const clients = new Map();
-
-/**
- * Broadcast helper
- */
-const broadcast = (data, exclude = null) => {
-
-    const message = JSON.stringify(data);
-
-    for(const [clientId, client] of clients.entries()){
-
-        if(
-            client.readyState === client.OPEN &&
-            client !== exclude
-        ){
-            client.send(message);
-        }
-    }
-};
 
 /**
  * Generate client ID
@@ -67,7 +58,12 @@ const generateClientId = () => {
  */
 
 wss.on("connection", (ws, req) => {
+    const technician = ws.technician;
 
+    if(user.role === "role"){
+        addSocket(technician.id, ws);
+    }
+    
     const clientId = generateClientId();
 
     clients.set(clientId, ws);
@@ -83,7 +79,7 @@ wss.on("connection", (ws, req) => {
         })
     );
 
-    ws.on("message", async (message) => {
+    ws.on("message", async ( message ) => {
 
         try{
 
@@ -114,6 +110,13 @@ wss.on("connection", (ws, req) => {
                 
                 case "send_booking_request":
                     await handleSendBookingRequest(
+                        ws,
+                        data
+                    )
+                    break;
+                
+                case "booking_request_response":
+                    await handleBookingRequestResponse(
                         ws,
                         data
                     )
@@ -163,15 +166,10 @@ wss.on("connection", (ws, req) => {
 
 
     ws.on("close", () => {
+        removeSocket(technician.id);
 
         console.log(`Client disconnected: ${clientId}`);
-
         clients.delete(clientId);
-
-        broadcast({
-            type: "user_left",
-            clientId,
-        });
     });
 
     ws.on("error", (error) => {
@@ -184,6 +182,7 @@ wss.on("connection", (ws, req) => {
         clients.delete(clientId);
     });
 });
+
 
 /**
  * Ping clients every 30 sec

@@ -53,7 +53,7 @@ const getTechnicians = async(
             )
         
         ORDER BY distance ASC
-        LIMIT 100;
+        LIMIT 500;
     `;
 
     const values = [

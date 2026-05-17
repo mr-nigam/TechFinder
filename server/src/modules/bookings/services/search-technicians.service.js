@@ -7,11 +7,8 @@ import infraRedis from
 import rankTechnicians from 
 './technician-ranking.service.js';
 
-import mapTechnicianProfiles from
-'../mappers/technician.mapper.js';
-
 import getAddressCoordinates from 
-'../repositories/address.repos.js';
+'../repositories/address.repo.js';
 
 import getTechnicians from
 '../repositories/get-nearby-technicians.repo.js';
@@ -22,12 +19,12 @@ import {
 
 import {
     cacheSearchResults,
-    getCachedSearchPage  
+    getCachedSearchPage,
+    setBookingCache
 } from '../bookingRedis/cache.js';
 
 
 const searchNearbyTechnicians = async (
-    userId,
     bookingData
 ) => {
 
@@ -42,7 +39,7 @@ const searchNearbyTechnicians = async (
     const { lng, lat } =
         await getAddressCoordinates(
             bookingData.addressId,
-            userId
+            bookingData.userId
         );
 
     let technicians =
@@ -72,14 +69,24 @@ const searchNearbyTechnicians = async (
         technicians
     );
 
-    const data = await getCachedSearchPage(
+
+    const draftKey = 
+        `booking_draft:${searchSessionId}`;
+    
+    await setBookingCache(
+        draftKey,
+        bookingData,
+        1800
+    );
+
+    const nearbyTechs = await getCachedSearchPage(
         searchSessionId,
         bookingData.page,
         bookingData.limit
     );
 
     return {
-        data,
+        nearbyTechs,
         searchSessionId
     };
 };
@@ -93,34 +100,21 @@ const getNearbyTechniciansFromRedis = async (
     /**
      * Expected format from geoSearch:
      * [
-     *   id: 'tech-id',
+     *   id: 'tech-id:ranking_score',
      *   distance: '2450.32' // meters
      * ]
      */
 
     const nearbyTechs = await geoSearch(
-        serviceCategoryId,
         lng,
-        lat
+        lat,
+        serviceCategoryId
     );
 
     if(!nearbyTechs.length) return [];
-
-    const pipeline = infraRedis.pipeline();
-
-    nearbyTechs.forEach(({ id }) => {
-        pipeline.get(`tech:profile:${id}`);
-    });
-
-    const redisResults = await pipeline.exec();
-
-    const profiles = mapTechnicianProfiles(
-        redisResults,
-        nearbyTechs
-    );
     
     const rankedProfiles =
-        rankTechnicians(profiles);
+        rankTechnicians(nearbyTechs);
 
     return rankedProfiles;
 };

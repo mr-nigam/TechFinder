@@ -11,7 +11,7 @@ const createBookingsTable = async () => {
                 id UUID PRIMARY KEY 
                     DEFAULT gen_random_uuid(),
                 
-                booking_code VARCHAR(30)
+                booking_code VARCHAR(20)
                     UNIQUE NOT NULL,
                 
                 user_id UUID
@@ -52,8 +52,8 @@ const createBookingsTable = async () => {
                         )
                     ),            
                 
-                service_type_name VARCHAR(120) NOT NULL,
-                service_name VARCHAR(120) NOT NULL,
+                --service_type_name VARCHAR(120) NOT NULL,
+                --service_name VARCHAR(120) NOT NULL,
 
                 customer_note TEXT
 
@@ -72,10 +72,10 @@ const createBookingsTable = async () => {
                         )
                     ),
 
-                base_fee NUMERIC(8,2) NOT NULL,
-                tax_amount NUMERIC(8,2) NOT NULL,
-                technician_payout NUMERIC(8,2) NOT NULL,
-                total_amount NUMERIC(8,2) NOT NULL,
+                base_fee NUMERIC(8,2) NOT NULL DEFAULT 0,
+                tax_amount NUMERIC(8,2) NOT NULL DEFAULT 0,
+                technician_payout NUMERIC(8,2) NOT NULL DEFAULT 0,
+                total_amount NUMERIC(8,2) NOT NULL DEFAULT 0,
 
                 payment_status VARCHAR(20) NOT NULL
                     DEFAULT 'pending'
@@ -97,16 +97,17 @@ const createBookingsTable = async () => {
                 started_at TIMESTAMPTZ,
                 completed_at TIMESTAMPTZ,
                 cancelled_at TIMESTAMPTZ,
+                rejected_at TIMESTAMPTZ,
 
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 
                 CHECK (
-                    base_fee > 0 AND
+                    base_fee >= 0 AND
                     tax_amount >= 0 AND
                     discount_amount >= 0 AND
                     technician_payout >= 0 AND
-                    total_amount > 0 AND
+                    total_amount >= 0 AND
                     technician_payout <= total_amount AND
                     discount_amount <= total_amount
                 )

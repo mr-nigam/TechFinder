@@ -6,6 +6,10 @@ import {
     emailQueue
 } from '#queues';
 
+import {
+    multipleDeleteFromCloudinary
+} from '#services';
+
 
 const deleteUser = async (userId) => {
 
@@ -80,47 +84,10 @@ const deleteUser = async (userId) => {
         client.release();
     }
 
-    let queueResults = await Promise.allSettled(
-        imageFiles.map( (file) =>
-            cleanupQueue.add(
-                "cloudinary:file:delete",
-                {
-                    public_id: file.public_id,
-                    resourceType: file.media_type
-                },
-                {
-                    jobId: `cloudinary:file:delete:${file.public_id}`
-                }
-            )
-        )
-    );
-        
-    queueResults.forEach((result) => {
-        if(result.status === "rejected"){
-            console.error(result.reason);
-        }
-    });
-
-    queueResults = await Promise.allSettled(
-        documentFiles.map( (file) =>
-            cleanupQueue.add(
-                "cloudinary:files:delete",
-                {
-                    public_id: file.public_id,
-                    resourceType: "raw"
-                },
-                {
-                    jobId: `cloudinary:files:delete:${file.public_id}`
-                }
-            )
-        )
-    );
-
-    queueResults.forEach((result) => {
-        if(result.status === "rejected"){
-            console.error(result.reason);
-        }
-    });
+    await multipleDeleteFromCloudinary([
+        ...documentFiles,
+        ...imageFiles
+    ]);
 
     try{
         await emailQueue.add(

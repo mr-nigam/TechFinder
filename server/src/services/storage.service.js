@@ -7,7 +7,9 @@ import{
 } from '#shared';
 
 
-const uploadOnCloudinary = async (localFilePath) => {
+const uploadOnCloudinary = async (
+    localFilePath
+) => {
 
   if(!localFilePath){
     throw new ApiError(
@@ -33,7 +35,10 @@ const uploadOnCloudinary = async (localFilePath) => {
   }
 };
 
-const deleteFromCloudinary = async(PublicId, resourceType= "image") => {
+const deleteFromCloudinary = async(
+    PublicId, 
+    resourceType= "image"
+) => {
 
     if(!PublicId) {
         throw new ApiError(
@@ -56,8 +61,37 @@ const deleteFromCloudinary = async(PublicId, resourceType= "image") => {
     }
 };
 
+const multipleDeleteFromCloudinary = async(
+    files = []
+) => {
+
+    if(!files.length) return [];
+
+    const results = await Promise.allSettled(
+        files.map((file) =>
+            deleteFromCloudinary(
+                file.public_id,
+                file.resource_type
+            )
+        )
+    );
+
+    results.forEach((result) => {
+
+        if (result.status === "rejected") {
+            console.error(
+                "Cloudinary delete failed:",
+                result.reason
+            );
+        }
+    });
+
+    return results;
+};
+
 
 export {
     uploadOnCloudinary,
-    deleteFromCloudinary
+    deleteFromCloudinary,
+    multipleDeleteFromCloudinary
 };

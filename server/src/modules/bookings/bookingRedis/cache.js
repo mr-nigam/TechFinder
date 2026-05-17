@@ -5,22 +5,8 @@ import {
     getManyCache
 } from '#infra';
 
-const profileCard = (profile)=>{
-    return {
-        id: profile.id,
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        specialization: profile.specialization,
-        experience_years: profile.experience_years,
-        hourly_rate: profile.hourly_rate,
-        profile_picture_url: profile.profile_picture_url,
-        service_category_id: profile.service_category_id,
-        average_rating: profile.average_rating,
-        ranking_score: profile.ranking_score,
-        total_reviews:  profile.total_reviews,
-        distance_meters: profile.distance_meters,
-    };
-}
+import profileCard from 
+'../utils/profile-cards.util.js';
 
 const cacheSearchResults = async(
     searchSessionId,
@@ -48,7 +34,7 @@ const cacheSearchResults = async(
 
     pipeline.expire(
         key,
-        300
+        1800
     );
 
     await pipeline.exec();
@@ -111,7 +97,8 @@ const getCachedIds = async(
 
     pipeline.llen(key);
 
-    const results = await pipeline.exec();
+    const results = 
+        await pipeline.exec();
 
     const technicianIds =
         results[0][1] || [];
@@ -126,10 +113,52 @@ const getCachedIds = async(
         ),
         technicianIds
     };
-
 };
+
+const getBookingCache = async(key) => {
+    try{
+        const data = await bookingRedis.get(key);
+        return data ? JSON.parse(data) : null;
+    }catch(err){
+        console.error("Redis GET failed:", err.message);
+        return null; // fallback safely
+    }
+};
+
+const setBookingCache = async(
+    key, 
+    value, 
+    ttl = 600
+) => {
+    try{
+        await bookingRedis.set(
+            key,
+            JSON.stringify(value),
+            "EX",
+            ttl
+        );
+
+        return true;
+
+    }catch(err){
+        console.error("Redis SET failed:", err.message);
+        return false;
+    }
+};
+
+const deleteBookingCache = async(key) => {
+    try{
+        await bookingRedis.del(key);
+    }catch(err){
+        console.error("Redis DEL failed:", err.message);
+    }
+};
+
 
 export {
     cacheSearchResults,
-    getCachedSearchPage       
+    getCachedSearchPage,
+    getBookingCache,
+    setBookingCache,
+    deleteBookingCache
 };

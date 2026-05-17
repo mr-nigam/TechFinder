@@ -1,7 +1,10 @@
 import pool from 
 '#config/database/postgres.js';
 
-import cleanupQueue from '../cleanup.queue';
+import {
+    multipleDeleteFromCloudinary
+} from '#services';
+
 
 const deleteAddress = async (addressId) => {
     let query = `
@@ -42,27 +45,7 @@ const deleteAddress = async (addressId) => {
 
     const imageFiles = result.rows;
 
-    // do it at this point only
-    const queueResults = await Promise.allSettled(
-        imageFiles.map( (file) =>
-            cleanupQueue.add(
-                "cloudinary:file:delete",
-                {
-                    public_id: file.public_id,
-                    resourceType: file.media_type
-                },
-                {
-                    jobId: `cloudinary:file:delete:${file.public_id}`
-                }
-            )
-        )
-    );
-
-    queueResults.forEach((result) => {
-        if(result.status === "rejected"){
-            console.error(result.reason);
-        }
-    });
+    await multipleDeleteFromCloudinary(imageFiles);
 };
 
 

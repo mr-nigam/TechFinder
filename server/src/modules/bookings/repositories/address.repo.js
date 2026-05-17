@@ -17,7 +17,7 @@ const getAddressCoordinates = async (
         FROM addresses
         WHERE id = $1
             AND user_id = $2
-            AND deleted_at IS NULL
+            AND deleted_at IS NULL;
     `;
 
     const result = await pool.query(query, [

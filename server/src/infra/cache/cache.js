@@ -100,12 +100,20 @@ const invalidateCaches = async (
 };
 
 const geoAdd = async (
-    key,
     longitude,
     latitude,
-    member
+    serviceCategoryId,
+    technicianId,
+    ranking_score
 ) => {
-    try {
+    const key = 
+        `tech:geo:${serviceCategoryId}`;
+
+    const member = 
+        `${technicianId}:${ranking_score}`;
+
+    try{
+
         await infraRedis.geoAdd(
             key,
             {
@@ -127,12 +135,12 @@ const geoAdd = async (
 };
 
 const geoSearch = async (
-    categoryId,
     lng,
-    lat
+    lat,
+    serviceCategoryId
 ) => {
     const searchKey = 
-        `tech:geo:${categoryId}`;
+        `tech:geo:${serviceCategoryId}`;
 
     try{
         return await infraRedis.geoSearch(
@@ -145,7 +153,7 @@ const geoSearch = async (
                 radius: 10000,
                 unit: 'm',
                 WITHDIST: true,
-                COUNT: 100,
+                COUNT: 500,
                 SORT: 'ASC'
             }
         );

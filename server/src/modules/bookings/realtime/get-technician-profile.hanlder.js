@@ -1,5 +1,5 @@
-import send from 
-'#realtime/utils/send.js';
+import sendRealtime from 
+'#realtime/utils/send.realtime.js';
 
 import {
     asyncHandler,
@@ -24,10 +24,10 @@ asyncHandler(async (ws, data) => {
     }
 
     const technician = await getTechnicianProfile(
-        data.technicianId
+        technicianId
     );
 
-    send(ws, {
+    sendRealtime(ws, {
         event:
             "technician_profile_success",
         data: {

@@ -4,28 +4,32 @@ import validateBookingData from
 import searchNearbyTechnicians from 
 '../services/search-technicians.service.js';
 
-import send from
-'#realtime/utils/send.js';
+import sendRealtime from 
+'#realtime/utils/send.realtime.js';
 
 import { 
     asyncHandler
 } from '#shared';
 
 
-const handleSearchTechnicians = asyncHandler(async (ws,data) => { 
-    const user = ws.user;
+const handleSearchTechnicians = 
+asyncHandler(async (ws, data) => { 
 
     const bookingData = 
         validateBookingData(data);
     
-    const technicians = 
+    bookingData.userId = ws.user.id;
+
+    const {
+        nearbyTechnicians,
+        searchSessionId
+    } = 
         await searchNearbyTechnicians(
-            user.id,
             bookingData
         );
     
     // No technicians found
-    if(!technicians.length){
+    if(!nearbyTechnicians.length){
         return send(ws, {
             event: "no_nearby_technicians_found",
             data: {
@@ -34,12 +38,13 @@ const handleSearchTechnicians = asyncHandler(async (ws,data) => {
         });
     }
 
-    send(ws, {
+    sendRealtime(ws, {
         event: "search_technicians_success",
         data: {
             total: technicians.length,
             data: {
-                data
+                technicians: nearbyTechnicians,
+                searchSessionId: searchSessionId,
             }
         }
     });

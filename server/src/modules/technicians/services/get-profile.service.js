@@ -12,7 +12,7 @@ import {
 
 import {
     validateTechnicianStatus
-} from './validate-technician-status.js';
+} from './validate-technician-status.service.js';
 
 import {
     getProfileData
@@ -42,12 +42,7 @@ const getTechnicianProfileFromDB = async(
     const profileCacheKey =
         `tech:profile:${technicianId}`;
 
-    const categoryId = technician.service_category_id;
-
-    const geoKey =
-        `tech:geo:${categoryId}`;
-    
-    const profileCacheTTL = 120 * 60; // 1 hour
+    const profileCacheTTL = 120 * 60; // 2 hour
 
     await Promise.allSettled([
         setCache(
@@ -57,10 +52,11 @@ const getTechnicianProfileFromDB = async(
         ),
 
         geoAdd(
-            geoKey,
             Number(coordinates.longitude),
             Number(coordinates.latitude),
-            technicianId
+            technician.service_category_id,
+            technicianId,
+            technician.ranking_score
         )
     ]);
 

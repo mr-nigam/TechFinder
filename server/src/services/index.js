@@ -1,6 +1,7 @@
 export {
     uploadOnCloudinary,
     deleteFromCloudinary,
+    multipleDeleteFromCloudinary
 } from './storage.service.js';
 
 export { default as 

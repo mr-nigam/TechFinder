@@ -1,5 +1,5 @@
 export {
-    default  as searchTechnicians
+    default as searchTechnicians
 } from './search-technicians.handler.js';
 
 export {

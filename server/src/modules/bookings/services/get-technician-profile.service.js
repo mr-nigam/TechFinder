@@ -27,14 +27,7 @@ const getTechnicianProfile = async (
             );
     }
 
-    send(ws, {
-        event:
-            "technician_profile_success",
-        data: {
-            technician
-        }
-    });
-
+    return technician;
 };
 
 

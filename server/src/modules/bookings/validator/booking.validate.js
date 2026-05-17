@@ -9,8 +9,8 @@ const ALLOWED_BOOKING_TYPES = [
     "scheduled"
 ];
 
-const validateBookingData = (body) =>{
-    const { 
+const validateBookingData = (data) =>{
+    const{ 
         addressId,
         serviceId,
         phoneType = "primary",
@@ -18,14 +18,18 @@ const validateBookingData = (body) =>{
         bookingType,
         serviceCategoryId,
         page = 1,
-        limit = 10
-    } = body;
+        limit = 10,
+        notes = ""
+    } = data;
 
-     const normalizedPhoneType =
+    const normalizedPhoneType =
         phoneType.trim().toLowerCase();
 
     const normalizedBookingType =
         bookingType?.trim().toLowerCase();
+    
+    const normalizedNotes =
+        notes?.trim();
 
     const idsToValidate = [
         addressId,
@@ -68,7 +72,11 @@ const validateBookingData = (body) =>{
         parseInt(page) || 1, 1
     );
     
-    const skip = (normalizedPage-1)*normalizedLimit;
+    const skip = 
+        (normalizedPage-1) * normalizedLimit;
+
+    const searchSessionId = 
+        data?.searchSessionId?.trim() || null;
 
     return {
         addressId,
@@ -76,6 +84,8 @@ const validateBookingData = (body) =>{
         serviceCategoryId,
         phoneId,
         skip,
+        searchSessionId,
+        notes: normalizedNotes,
         limit: normalizedLimit,
         page: normalizedPage,
         phoneType: normalizedPhoneType,
