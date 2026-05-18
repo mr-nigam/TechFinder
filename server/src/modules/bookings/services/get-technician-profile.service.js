@@ -1,9 +1,15 @@
+import getTechnicianProfileFromDB  from 
+'#technicians/services/get-profile.service.js';
+
 import {
+    setCache,
     getCache
 } from '#infra';
 
-import getTechnicianProfileFromDB  from 
-'#technicians/services/get-profile.service.js';
+import { 
+    ApiError 
+} from '#shared';
+
 
 
 const getTechnicianProfile = async (
@@ -26,6 +32,21 @@ const getTechnicianProfile = async (
                 technicianId
             );
     }
+    
+    if(!technician){
+        throw new ApiError(
+            400,
+            "Technician not available"
+        )
+    }
+
+    const profileCacheTTL = 120 * 60; // 2 hour
+
+    await setCache(
+        cacheKey,
+        technician,
+        profileCacheTTL
+    )
 
     return technician;
 };

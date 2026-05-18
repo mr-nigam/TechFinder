@@ -11,8 +11,10 @@ import {
 } from '#modules/bookings/realtime/index.js';
 
 import {
+    technicianSockets,
     addSocket,
-    removeSocket
+    removeSocket,
+    getSocket
 } from './utils/sockets-manager.js';
 
 import broadcast from 
@@ -41,34 +43,18 @@ const wss = new WebSocketServer({
     clientTracking: true,
 });
 
-
-// Store connected clients
-
-const clients = new Map();
-
-/**
- * Generate client ID
- */
-const generateClientId = () => {
-    return crypto.randomUUID();
-};
-
 /**
  * Handle WebSocket connections
  */
 
 wss.on("connection", (ws, req) => {
     const technician = ws.technician;
+    const user = ws.user;
 
     if(user.role === "role"){
         addSocket(technician.id, ws);
     }
-    
-    const clientId = generateClientId();
-
-    clients.set(clientId, ws);
-
-    console.log(`Client connected: ${clientId}`);
+    addSocket(user.id,ws);
 
     // Send initial connection payload
     ws.send(
@@ -166,20 +152,15 @@ wss.on("connection", (ws, req) => {
 
 
     ws.on("close", () => {
-        removeSocket(technician.id);
+        removeSocket(technician?.id);
+        removeSocket(user.id);
 
-        console.log(`Client disconnected: ${clientId}`);
-        clients.delete(clientId);
+        console.log(`user disconnected: ${user.id}:${technician?.id}`);
     });
 
     ws.on("error", (error) => {
-
         console.error(
-            `WebSocket error (${clientId}):`,
-            error
-        );
-
-        clients.delete(clientId);
+            `WebSocket error:`, error);
     });
 });
 
@@ -189,7 +170,7 @@ wss.on("connection", (ws, req) => {
  */
 const interval = setInterval(() => {
 
-    wss.clients.forEach((ws) => {
+    wss.technicianSockets.forEach((ws) => {
 
         if (ws.isAlive === false) {
             return ws.terminate();
@@ -216,7 +197,7 @@ process.on("SIGINT", () => {
 
     console.log("Shutting down server...");
 
-    wss.clients.forEach((ws) => {
+    wss.technicianSockets.forEach((ws) => {
         ws.close();
     });
 

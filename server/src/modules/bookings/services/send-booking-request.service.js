@@ -4,7 +4,7 @@ import {
     deleteBookingCache
 } from '../bookingRedis/cache.js';
 
-import createBooking from 
+import createBookingsRequest from 
 '../repositories/create-booking.repo.js'
 
 import notifyTechnician from
@@ -34,19 +34,17 @@ const sendBookingRequest = async (
     bookingData.technicianId = 
         data.technicianId; 
 
-    const { 
-        bookingId,
-        bookingCode
-    } = await createBooking({
-        bookingData
-    });
+    const bookingRequestId = await 
+        createBookingsRequest(
+            bookingData
+        );
 
     await deleteBookingCache(
         draftKey
     );
 
-    bookingData.bookingCode = data.bookingCode;
-    bookingData.bookingId = data.bookingId;
+    bookingData.bookingRequestId = 
+        bookingRequestId;
 
     await setBookingCache(
         draftKey,
@@ -57,7 +55,7 @@ const sendBookingRequest = async (
         bookingData
     });
     
-    return bookingCode;
+    return bookingData;
 };
 
 

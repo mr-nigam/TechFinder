@@ -10,7 +10,8 @@ import {
 
 
 const createBooking = async ({
-    bookingData
+    bookingData,
+    client
 }) => {
 
     const bookingCode = await generateBookingCode();
@@ -46,7 +47,7 @@ const createBooking = async ({
 
     try{
         const result =
-            await pool.query(
+            await client.query(
                 query,
                 values
             );

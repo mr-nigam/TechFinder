@@ -128,7 +128,7 @@ const getBookingCache = async(key) => {
 const setBookingCache = async(
     key, 
     value, 
-    ttl = 600
+    ttl = 900
 ) => {
     try{
         await bookingRedis.set(
@@ -154,11 +154,63 @@ const deleteBookingCache = async(key) => {
     }
 };
 
+const setLock = async(
+    key,
+    lockValue,
+    ttl = 10
+) =>{
+    try{
+        const result = await bookingRedis.set(
+            key,
+            JSON.stringify(val),
+            "NX",
+            "EX",
+            ttl
+        );
+
+        return result === "OK";
+    
+    }catch(err){
+        console.log(`Set Lock Redis Error: ${err}`);
+
+        throw Error(
+            err.message || "redis lock failed"
+        );
+    }
+}
+
+const releaseLock = async(
+    key,
+    lockValue
+) => {
+    
+    try{
+        const curent = 
+            await bookingRedis.get(key);
+
+        if(curent === lockValue){
+            await bookingRedis.del(key);
+            
+            return true;
+        }
+
+        return false;
+    }catch(err){
+        console.log(`Release Lock Redis Error: ${err}`);
+
+        throw Error(
+            err.message || "redis release lock failed"
+        );
+    }
+
+}
 
 export {
     cacheSearchResults,
     getCachedSearchPage,
     getBookingCache,
     setBookingCache,
-    deleteBookingCache
+    deleteBookingCache,
+    setLock,
+    releaseLock
 };

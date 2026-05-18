@@ -21,9 +21,13 @@ const notifyTechnician = async({
     sendRealtime(
         ws,
         {
-            event:"new_booking_request",
+            event: "new_booking_request",
             data: {
-                bookingData   
+                bookingRequestId: bookingData.bookingRequestId,
+                customerNote: bookingData.customerNote,
+                bookingType: bookingData.bookingType,  
+                lng: bookingData.lng,  
+                lat: bookingData.lat
             }
         }
     );

@@ -24,24 +24,19 @@
     "all": "concurrently \"npm run dev\" \"npm run worker\"",
     "start": "node src/server.js"
   },
-
   "imports": {
     "#shared": "./src/shared/index.js",
     "#shared/*": "./src/shared/*",
-
     "#infra": "./src/infra/index.js",
     "#infra/*": "./src/infra/*",
-
     "#queues": "./src/queues/index.js",
     "#queues/*": "./src/queues/*",
-
     "#config/*": "./src/config/*",
     "#repositories/*": "./src/repositories/*",
     "#middlewares/*": "./src/middlewares/*",
     "#lib/*": "./src/lib/*",
     "#bootstrap/*": "./src/bootstrap/*",
     "#services": "./src/services/index.js",
-  
     "#modules/*": "./src/modules/*",
     "#users/*": "./src/modules/users/*",
     "#auth/*": "./src/modules/auth/*",
@@ -49,7 +44,6 @@
     "#bookings/*": "./src/modules/bookings/*",
     "#notifications/*": "./src/modules/notifications/*"
   },
-  
   "dependencies": {
     "bcrypt": "^6.0.0",
     "bullmq": "^5.76.5",

@@ -66,12 +66,14 @@ const searchNearbyTechnicians = async (
 
     await cacheSearchResults(
         searchSessionId,
-        technicians
+        technicians,
     );
-
 
     const draftKey = 
         `booking_draft:${searchSessionId}`;
+    
+    bookingData.lng = lng,
+    bookingData.lat = lat,
     
     await setBookingCache(
         draftKey,

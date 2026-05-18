@@ -13,17 +13,19 @@ import {
 const handleSendBookingRequest = 
 asyncHandler(async (ws, data) => { 
 
-    const {
-        bookingCode
-    } = await sendBookingRequest(
-        data
-    );
+    const bookingData = 
+        await sendBookingRequest(
+            data
+        );
 
+    const bookingRequestId =  
+        bookingData.bookingRequestId;
+    
     sendRealtime(ws,{
         event:
             "booking_request_sent",
         data:{
-            bookingCode
+            bookingRequestId: bookingRequestId
         }
     });
 });

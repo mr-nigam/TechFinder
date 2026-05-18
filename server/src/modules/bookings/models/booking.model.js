@@ -1,7 +1,9 @@
 import pool from 
 '#config/database/postgres.js';
 
-import { createUpdatedAtTrigger } from '#shared';
+import { 
+    createUpdatedAtTrigger 
+} from '#shared';
 
 
 const createBookingsTable = async () => {
@@ -11,6 +13,12 @@ const createBookingsTable = async () => {
                 id UUID PRIMARY KEY 
                     DEFAULT gen_random_uuid(),
                 
+                search_session_id VARCHAR(50) 
+                    UNIQUE NOT NULL,
+
+                booking_request_id UUID UNIQUE
+                    REFERENCES booking_requests(id),
+
                 booking_code VARCHAR(20)
                     UNIQUE NOT NULL,
                 
@@ -30,16 +38,16 @@ const createBookingsTable = async () => {
                     REFERENCES phones(id)
                     ON DELETE SET NULL,
                 
-                payment_id UUID
-                    REFERENCES payments(id)
-                    ON DELETE SET NULL,
-                
                 service_category_id UUID
                     REFERENCES service_categories(id)
                     ON DELETE SET NULL,
                 
                 service_id UUID
                     REFERENCES services(id)
+                    ON DELETE SET NULL,
+
+                payment_id UUID
+                    REFERENCES payments(id)
                     ON DELETE SET NULL,
 
                 booking_type VARCHAR(20) NOT NULL
@@ -55,20 +63,16 @@ const createBookingsTable = async () => {
                 --service_type_name VARCHAR(120) NOT NULL,
                 --service_name VARCHAR(120) NOT NULL,
 
-                customer_note TEXT
+                customer_note TEXT,
 
                 status VARCHAR(20) NOT NULL
                     DEFAULT 'pending'
                     CHECK(
                         status IN(
-                            'pending',
                             'assigned',
-                            'accepted',
                             'in_progress',
                             'completed',
-                            'cancelled',
-                            'rejected',
-                            'expired'
+                            'cancelled'
                         )
                     ),
 
@@ -76,7 +80,7 @@ const createBookingsTable = async () => {
                 tax_amount NUMERIC(8,2) NOT NULL DEFAULT 0,
                 technician_payout NUMERIC(8,2) NOT NULL DEFAULT 0,
                 total_amount NUMERIC(8,2) NOT NULL DEFAULT 0,
-
+                
                 payment_status VARCHAR(20) NOT NULL
                     DEFAULT 'pending'
                     CHECK(
@@ -98,6 +102,7 @@ const createBookingsTable = async () => {
                 completed_at TIMESTAMPTZ,
                 cancelled_at TIMESTAMPTZ,
                 rejected_at TIMESTAMPTZ,
+                scheduled_at TIMESTAMPTZ,
 
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,

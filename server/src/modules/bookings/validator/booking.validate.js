@@ -19,7 +19,7 @@ const validateBookingData = (data) =>{
         serviceCategoryId,
         page = 1,
         limit = 10,
-        notes = ""
+        customerNote = ""
     } = data;
 
     const normalizedPhoneType =
@@ -28,8 +28,8 @@ const validateBookingData = (data) =>{
     const normalizedBookingType =
         bookingType?.trim().toLowerCase();
     
-    const normalizedNotes =
-        notes?.trim();
+    const normalizedCustomerNote =
+        customerNote?.trim();
 
     const idsToValidate = [
         addressId,
@@ -71,9 +71,6 @@ const validateBookingData = (data) =>{
     const normalizedPage = Math.max(
         parseInt(page) || 1, 1
     );
-    
-    const skip = 
-        (normalizedPage-1) * normalizedLimit;
 
     const searchSessionId = 
         data?.searchSessionId?.trim() || null;
@@ -83,9 +80,8 @@ const validateBookingData = (data) =>{
         serviceId,
         serviceCategoryId,
         phoneId,
-        skip,
         searchSessionId,
-        notes: normalizedNotes,
+        customerNote: normalizedCustomerNote,
         limit: normalizedLimit,
         page: normalizedPage,
         phoneType: normalizedPhoneType,
