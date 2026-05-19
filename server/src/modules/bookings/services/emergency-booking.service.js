@@ -1,6 +1,3 @@
-import pool from 
-'#config/database/postgres.js';
-
 import {
     getAddressCoordinates
 } from '../repositories/index.js';
@@ -23,6 +20,49 @@ import {
     getSocket
 } from '#realtime/utils/sockets-manager.js';
 
+
+const dispatchEmergencyBookingRequest = async(
+    technicians,
+    technicianBookingRequest
+) => {
+    const totalTechnicians = technicians.length;
+
+    const bookingAccepted = false;
+
+    const batchSize = 5;
+    let currentIndex = 0;
+
+    const intervalId = setInterval(() => {
+        
+        if(bookingAccepted){
+            clearInterval(intervalId);
+            return;
+        }
+
+        if(currentIndex>=totalTechnicians){
+            clearInterval(intervalId);
+            return;
+        };
+
+        for(let i = currentIndex; i<totalTechnicians; i++){
+            
+            const ws = getSocket(
+                technicians[i].technicianId
+            );
+
+            sendRealtime(ws, {
+                    event: "emergency_booking",
+                    data: {
+                        booking: technicianBookingRequest
+                    }
+                }
+            );
+        }
+
+        currentIndex+=batchSize;
+
+    }, 10000);
+};
 
 const emergencyBooking = async( 
     bookingDetails 
@@ -63,7 +103,6 @@ const emergencyBooking = async(
             bookingDetails,
             bookingRequest
         );
-    
 };
 
 
