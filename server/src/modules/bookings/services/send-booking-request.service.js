@@ -20,42 +20,43 @@ const sendBookingRequest = async (
     const draftKey = 
         `booking_draft:${searchSessionId}`;
     
-    const bookingData = await getBookingCache(
+    const bookingDetails = await getBookingCache(
         draftKey
     );
 
-    if(!bookingData){
+    if(!bookingDetails){
         throw new ApiError(
             404,
             "Booking draft expired"
         );
     }
 
-    bookingData.technicianId = 
+    bookingDetails.technicianId = 
         data.technicianId; 
 
-    const bookingRequestId = await 
+    const bookingRequest = await 
         createBookingsRequest(
-            bookingData
+            bookingDetails
         );
 
     await deleteBookingCache(
         draftKey
     );
 
-    bookingData.bookingRequestId = 
-        bookingRequestId;
+    bookingDetails.bookingRequestId = 
+        bookingRequest.id;
 
     await setBookingCache(
         draftKey,
-        bookingData
+        bookingDetails
     );
 
     await notifyTechnician({
-        bookingData
+        bookingDetails,
+        bookingRequest
     });
     
-    return bookingData;
+    return bookingDetails;
 };
 
 

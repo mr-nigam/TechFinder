@@ -1,17 +1,25 @@
-import pool from '#config/db';
+import pool from 
+'#config/database/postgres.js';
+
+import { 
+    createUpdatedAtTrigger 
+} from '#shared';
 
 
 const createServicesTable = async() => {
     try{
         await pool.query(`
             CREATE TABLE IF NOT EXISTS services(
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                id UUID PRIMARY KEY 
+                    DEFAULT gen_random_uuid(),
 
-                category_id UUID NOT NULL
+                service_category_id UUID NOT NULL
                     REFERENCES service_categories(id) 
                     ON DELETE CASCADE,
 
                 service_name VARCHAR(100) NOT NULL,
+                service_category_name VARCHAR(100) NOT NULL,
+
                 slug VARCHAR(120) UNIQUE NOT NULL,
 
                 description TEXT,
@@ -42,7 +50,9 @@ const createServicesTable = async() => {
         
         await pool.query(`
             CREATE INDEX IF NOT EXISTS idx_services_category
-            ON services(category_id);
+            ON services(category_id)
+            WHERE is_active = TRUE
+            AND deleted_at IS NULL;
         `);
         
         await pool.query(`
@@ -50,6 +60,8 @@ const createServicesTable = async() => {
             ON services(display_order)
             WHERE is_active = true;
         `);
+
+        await createUpdatedAtTrigger('services');
 
         console.log("Services table and indexes created successfully");
 

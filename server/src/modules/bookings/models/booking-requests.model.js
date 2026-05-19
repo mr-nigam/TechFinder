@@ -17,14 +17,20 @@ const createBookingsRequestsTable = async() =>{
 
                 address_id UUID NOT NULL,
 
-                phone_id UUID,
-
-                phone_type VARCHAR(15) NOT NULL,
-
                 service_category_id UUID NOT NULL,
                 
                 service_id UUID NOT NULL,
                 
+                customer_phone VARCHAR(15)
+                    CHECK (
+                        phone ~ '^\\+[1-9][0-9]{6,14}$'
+                    ),
+
+                phone_type VARCHAR(15) NOT NULL,
+                
+                service_category_name VARCHAR(120) NOT NULL,
+                service_name VARCHAR(120) NOT NULL,
+
                 customer_note TEXT,
 
                 booking_type VARCHAR(20) NOT NULL
@@ -40,13 +46,22 @@ const createBookingsRequestsTable = async() =>{
                 status request_status DEFAULT 'pending'
                     CHECK(
                         request_status IN(
-                        'pending',
-                        'accepted',
-                        'rejected',
-                        'cancelled',
-                        'expired'
+                            'pending',
+                            'accepted',
+                            'rejected',
+                            'cancelled',
+                            'expired'
                         )
                     ),
+
+                estimated_duration_minutes INT DEFAULT 60
+                    CHECK (
+                        estimated_duration_minutes BETWEEN 5 AND 1440
+                    ),
+                
+                base_fee NUMERIC(8,2) NOT NULL,
+                
+                technician_payout NUMERIC(8,2) NOT NULL,
 
                 requested_at TIMESTAMP DEFAULT NOW(),
 

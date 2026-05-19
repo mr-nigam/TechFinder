@@ -14,18 +14,21 @@ import {
 
 const handleSearchTechnicians = 
 asyncHandler(async (ws, data) => { 
+    
+    const user = ws.user;
 
-    const bookingData = 
+    const bookingDetails = 
         validateBookingData(data);
     
-    bookingData.userId = ws.user.id;
+    bookingDetails.userId = user.id;
+    bookingDetails.customerPhone = user.phone;
 
     const {
         nearbyTechnicians,
         searchSessionId
     } = 
         await searchNearbyTechnicians(
-            bookingData
+            bookingDetails
         );
     
     // No technicians found

@@ -1,7 +1,9 @@
 import pool from 
 '#config/database/postgres.js';
 
-import createUpdatedAtTrigger from '#shared';
+import {
+    createUpdatedAtTrigger
+} from '#shared';
 
 
 const createPhonesTable = async() => {

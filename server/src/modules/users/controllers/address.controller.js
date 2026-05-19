@@ -100,7 +100,7 @@ const addAddress = asyncHandler(async (req, res) => {
                 country,
                 pincode,
                 location,
-                location_accuracy_meters,
+                location_accuracy,
                 location_source,
                 is_default
             )
@@ -549,12 +549,12 @@ const updateLocation = asyncHandler(async (req, res) => {
                 ST_MakePoint($1, $2), 
                 4326
             )::geography,
-            location_accuracy_meters = $3,
+            location_accuracy = $3,
             location_source  = $4
         WHERE id = $5
         RETURNING 
             ST_GeoJSON(location) AS location,
-            location_accuracy_meters,
+            location_accuracy,
             location_source;
     `;
 

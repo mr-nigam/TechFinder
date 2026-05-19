@@ -10,7 +10,7 @@ import {
 
 
 const createBooking = async ({
-    bookingData,
+    bookingRequest,
     client
 }) => {
 
@@ -19,30 +19,57 @@ const createBooking = async ({
     const query = `
         INSERT INTO bookings(
             booking_code,
+            search_session_id,
+            booking_request_id,
             user_id,
             technician_id,
             address_id,
-            phone_id,
             service_category_id,
+            service_id,
+            customer_phone,
+            phone_type,
             booking_type,
-            customer_note
+            customer_note,
+            service_category_name,
+            service_name,
+            estimated_duration_minutes,
+            base_fee
         )
         VALUES(
-            $1,$2,$3,$4,$5,$6,$7,$8
+            $1, $2, $3, $4,
+            $5, $6, $7, $8,
+            $9, $10, $11, $12, 
+            $13, $14, $15, $16
         )
-        RETURNING 
-            id, booking_code;
+        RETURNING (
+            to_jsonb(bookings)
+            -'created_at',
+            -'updated_at',
+            -'started_at',
+            -'completed_at',
+            -'cancelled_at',
+            -'scheduled_at',
+            -'actual_duration_minutes'
+        ) AS booking;
     `;
 
     const values = [
         bookingCode,
-        bookingData.userId,
-        bookingData.technicianId,
-        bookingData.addressId,
-        bookingData.phoneId,
-        bookingData.serviceCategoryId,
-        bookingData.bookingType,
-        bookingData.notes
+        bookingRequest.search_session_id,
+        bookingRequest.id,
+        bookingRequest.user_id,
+        bookingRequest.technician_id,
+        bookingRequest.address_id,
+        bookingRequest.service_category_id,
+        bookingRequest.service_id,
+        bookingRequest.customer_phone,
+        bookingRequest.phone_type,
+        bookingRequest.booking_type,
+        bookingRequest.customer_note,
+        bookingRequest.service_category_name,
+        bookingRequest.service_name,
+        bookingRequest.estimated_duration_minutes,
+        bookingRequest.base_fee,
     ];
 
     try{
@@ -51,12 +78,9 @@ const createBooking = async ({
                 query,
                 values
             );
-
-        return {
-                bookingId: result.rows[0].id,
-                bookingCode: result.rows[0].booking_code
-            };
-
+        
+        return result.rows[0].booking;
+        
     }catch(error){
         if(
             error.code === "23505"

@@ -29,7 +29,7 @@ const createAddressesTable = async () => {
                     CHECK (length(pincode) BETWEEN 3 AND 10),
 
                 location GEOGRAPHY(POINT, 4326) NOT NULL,
-                location_accuracy_meters NUMERIC(8,2),
+                location_accuracy NUMERIC(8,2),
                 location_source VARCHAR(20) DEFAULT 'gps'
                     CHECK (
                     location_source IN (

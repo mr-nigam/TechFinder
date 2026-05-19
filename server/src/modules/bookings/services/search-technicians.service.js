@@ -25,35 +25,35 @@ import {
 
 
 const searchNearbyTechnicians = async (
-    bookingData
+    bookingDetails
 ) => {
 
-    if(bookingData.searchSessionId){
+    if(bookingDetails.searchSessionId){
         return getCachedSearchPage(
-            bookingData.searchSessionId,
-            bookingData.page,
-            bookingData.limit
+            bookingDetails.searchSessionId,
+            bookingDetails.page,
+            bookingDetails.limit
         );
     }
 
-    const { lng, lat } =
+    const { lng, lat, address} =
         await getAddressCoordinates(
-            bookingData.addressId,
-            bookingData.userId
+            bookingDetails.addressId,
+            bookingDetails.userId
         );
 
     let technicians =
         await getNearbyTechniciansFromRedis(
             lng,
             lat,
-            bookingData.serviceCategoryId
+            bookingDetails.serviceCategoryId
         );
     
     if(technicians.length < 5){
         technicians = await getNearbyTechniciansFromDB(
             lng,
             lat,
-            bookingData.serviceCategoryId
+            bookingDetails.serviceCategoryId
         );
     }
 
@@ -68,23 +68,24 @@ const searchNearbyTechnicians = async (
         searchSessionId,
         technicians,
     );
+    
+    bookingDetails.lng = lng;
+    bookingDetails.lat = lat;
+    bookingDetails.address = address;
 
     const draftKey = 
         `booking_draft:${searchSessionId}`;
-    
-    bookingData.lng = lng,
-    bookingData.lat = lat,
-    
+
     await setBookingCache(
         draftKey,
-        bookingData,
+        bookingDetails,
         1800
     );
 
     const nearbyTechs = await getCachedSearchPage(
         searchSessionId,
-        bookingData.page,
-        bookingData.limit
+        bookingDetails.page,
+        bookingDetails.limit
     );
 
     return {

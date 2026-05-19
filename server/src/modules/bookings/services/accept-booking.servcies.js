@@ -14,7 +14,8 @@ import {
 
 import {
     setLock,
-    releaseLock
+    releaseLock,
+    getBookingCache
 } from '../bookingRedis/cache.js';
 
 // send confirmation message to user and coordinates of techie, all details of booking
@@ -29,7 +30,9 @@ const acceptBooking = async(
     const query = `
         SELECT search_session_id
         FROM booking_requests
-        WHERE id = $1;
+        WHERE id = $1
+            AND user_id = $2
+            AND deleted_at IS NULL;
     `;
     
     const result  = await pool.query(
@@ -39,6 +42,9 @@ const acceptBooking = async(
 
     const searchSessionId = 
         result.rows[0].searchSessionId;
+        
+    const draftKey = 
+        `booking_draft:${searchSessionId}`;
 
     const lockKey =  
         `booking_lock:${searchSessionId}`;
@@ -61,15 +67,15 @@ const acceptBooking = async(
     try{
         await client.query("BEGIN");
 
-        const bookingRequestData =  
+        const bookingRequest =  
             await updateBookingRequestStatus(
-                bookingRequestId,
+                data.bookingRequestId,
                 "accepted",
                 client
             );
 
-        await createBooking(
-            bookingRequestData,
+        const booking = await createBooking(
+            bookingRequest,
             client
         );
         

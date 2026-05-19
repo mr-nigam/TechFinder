@@ -39,7 +39,11 @@ const updateBookingRequestStatus = async(
             SET status = $1,
             ${timestampColumn} = NOW()
         WHERE id = $2
-        RETURNING id;
+        RETURNING  (
+            to_jsonb(booking_requests)
+            -'created_at',
+            -'responded_at'
+        ) AS booking_request;
     `;
 
     const result = await client.query(
@@ -54,7 +58,7 @@ const updateBookingRequestStatus = async(
         );
     }
 
-    return result.rows[0];
+    return result.rows[0].booking_request;
 };
 
 
