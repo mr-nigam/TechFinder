@@ -42,7 +42,8 @@
     "#auth/*": "./src/modules/auth/*",
     "#technicians/*": "./src/modules/technicians/*",
     "#bookings/*": "./src/modules/bookings/*",
-    "#notifications/*": "./src/modules/notifications/*"
+    "#notifications/*": "./src/modules/notifications/*",
+    "#realtime/*": "./src/realtime/*"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

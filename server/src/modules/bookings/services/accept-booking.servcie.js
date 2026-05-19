@@ -18,6 +18,11 @@ import {
     getBookingCache
 } from '../bookingRedis/cache.js';
 
+import {
+    notifyUser,
+    notifyTechnician
+} from '#notifications/services/index.js';
+
 // send confirmation message to user and coordinates of techie, all details of booking
 // send onformation message to techie and update his assiged to show this booking and send him all details 
 // setup a new chat session between both
@@ -105,13 +110,7 @@ const acceptBooking = async(
     }finally{
         client.release();
     }
+};
 
-    const result = await updateBookingStatus(
-        data.bookingId,
-        "accepted"
-    );
-
-
-}
 
 export default acceptBooking;

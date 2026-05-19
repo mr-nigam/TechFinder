@@ -25,7 +25,7 @@ asyncHandler(async (ws, data) => {
         event:
             "booking_request_sent",
         data:{
-            bookingRequestId: bookingRequestId
+            bookingRequestId
         }
     });
 });

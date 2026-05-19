@@ -40,11 +40,11 @@ const rankTechnicians = (
                     technicianId
                 ),
 
-                final_score: Number(
+                finalScore: Number(
                     finalScore.toFixed(5)
                 ),
 
-                distance_km:
+                distanceKM:
                     Number(
                         (
                             distanceMeters / 1000
@@ -56,7 +56,7 @@ const rankTechnicians = (
 
     rankednearbyTechnicians.sort(
         (a, b) =>
-            b.final_score - a.final_score
+            b.finalScore - a.finalScore
     );
 
     return rankednearbyTechnicians;

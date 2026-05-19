@@ -106,7 +106,7 @@ const createBookingsRequest = async (
     const values = [
         bookingDetails.searchSessionId,
         bookingDetails.userId,
-        bookingDetails.technicianId,
+        bookingDetails.technicianId || null,
         bookingDetails.addressId,
         bookingDetails.serviceCategoryId,
         bookingDetails.serviceId,

@@ -4,11 +4,15 @@ import {
     deleteBookingCache
 } from '../bookingRedis/cache.js';
 
-import createBookingsRequest from 
-'../repositories/create-booking.repo.js'
+import {
+    createBookingsRequest
+} from '../repositories/index.js'
 
 import notifyTechnician from
-'#notifications/services/notify-technician.service.js';
+'#notifications/services/index.js';
+
+import buildBookingRequestPayload from
+'../utils/booking-request.utils.js';
 
 
 const sendBookingRequest = async (
@@ -51,10 +55,16 @@ const sendBookingRequest = async (
         bookingDetails
     );
 
-    await notifyTechnician({
-        bookingDetails,
-        bookingRequest
-    });
+    const technicianBookingRequest =
+        buildBookingRequestPayload(
+            bookingDetails,
+            bookingRequest
+        );
+
+    await notifyTechnician(
+        "instant_booking_request",
+        technicianBookingRequest
+    );
     
     return bookingDetails;
 };

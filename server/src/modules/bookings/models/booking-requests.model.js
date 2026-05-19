@@ -13,7 +13,7 @@ const createBookingsRequestsTable = async() =>{
             
                 user_id UUID NOT NULL,
 
-                technician_id UUID NOT NULL,
+                technician_id UUID,
 
                 address_id UUID NOT NULL,
 
@@ -62,6 +62,8 @@ const createBookingsRequestsTable = async() =>{
                 base_fee NUMERIC(8,2) NOT NULL,
                 
                 technician_payout NUMERIC(8,2) NOT NULL,
+
+                emergency_charges NUMERIC(8,2) NOT NULL,
 
                 requested_at TIMESTAMP DEFAULT NOW(),
 

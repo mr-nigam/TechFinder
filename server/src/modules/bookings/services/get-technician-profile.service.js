@@ -11,7 +11,6 @@ import {
 } from '#shared';
 
 
-
 const getTechnicianProfile = async (
     technicianId
 ) => {

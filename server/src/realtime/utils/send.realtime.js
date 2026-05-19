@@ -3,7 +3,13 @@ import {
 } from '#shared';
 
 
-const sendRealtime = (ws, payload = {}) => {
+const sendRealtime = (
+    ws, 
+    {
+        event,
+        data = {}
+    } = {}
+) => {
 
     if(!ws){
         throw new ApiError(
@@ -21,16 +27,19 @@ const sendRealtime = (ws, payload = {}) => {
         ws.send(
             JSON.stringify({
                 timestamp: Date.now(),
-                ...payload
+                event,
+                data
             })
         );
 
         return true;
     
     }catch(error){
+
         throw new ApiError(
             500,
-            error.message || 'Failed to send websocket message'
+            error.message 
+                || "Failed to send websocket message"
         );
     }
 };

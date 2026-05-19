@@ -1,6 +1,6 @@
 export {
-    default as searchTechnicians
-} from './search-technicians.handler.js';
+    default as handleInstantTechnicianSearch
+} from './instant-technician-search.handler.js';
 
 export {
     default as handleGetTechnicianProfile
@@ -9,3 +9,11 @@ export {
 export {
     default as handleSendBookingRequest
 } from './send-booking-request.handler.js';
+
+export {
+    default as handleBookingRequestResponse
+} from './booking-request-response.handler.js';
+
+export {
+    default as handleEmergencyBooking
+} from './emergency-booking.handler.js';

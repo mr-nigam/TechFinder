@@ -2,36 +2,22 @@ import pool from
 '#config/database/postgres.js';
 
 
-const getTechnicians = async(
+const getActiveTechnicians = async(
     lng,
     lat,
     serviceCategoryId
 ) => {
     const query = `
         SELECT 
-            t.id,
-            t.specialization,
-            t.experience_years,
-            t.service_category_id,
-            t.hourly_rate,
+            t.id AS technicianId,
+            tpm.ranking_score AS rankingScore,
 
             ST_Distance(
                 t.current_location::geography,
                 ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography
-            ) AS distance,
-            
-            tu.profile_picture_url,
-            tu.first_name,
-            tu.last_name,
-
-            tpm.ranking_score,
-            tpm.total_reviews,
-            tpm.average_rating
+            ) AS distance
 
         FROM technicians t
-
-        JOIN users tu
-            ON t.user_id = tu.id
         
         JOIN technician_performance_metrics tpm
             ON t.id = tpm.technician_id
@@ -71,4 +57,4 @@ const getTechnicians = async(
 };
 
 
-export default getTechnicians;
+export default getActiveTechnicians;

@@ -4,7 +4,9 @@ import http from 'http';
 import { WebSocketServer } from 'ws';
 
 import {
-    handleSearchTechnicians,
+    handleInstantTechnicianSearch,
+    handleScheduledTechnicianSearch,
+    handleEmergencyBooking,
     handleGetTechnicianProfile,
     handleSendBookingRequest,
     handleBookingRequestResponse
@@ -80,13 +82,27 @@ wss.on("connection", (ws, req) => {
 
             switch (event){
 
-                case "search_technicians":
-                    await handleSearchTechnicians(
+                case "search_instant_technicians":
+                    await handleInstantTechnicianSearch(
                         ws,
                         data
                     );
                     break;
                 
+                 case "search_scheduled_technicians":
+                    await handleScheduledTechnicianSearch(
+                        ws,
+                        data
+                    );
+                    break;
+                
+                case "create_emergency_booking":
+                    await handleEmergencyBooking(
+                        ws,
+                        data
+                    );
+                    break;
+
                 case "technician_profile":
                     await handleGetTechnicianProfile(
                         ws,
@@ -100,7 +116,7 @@ wss.on("connection", (ws, req) => {
                         data
                     )
                     break;
-                
+
                 case "booking_request_response":
                     await handleBookingRequestResponse(
                         ws,
@@ -109,7 +125,6 @@ wss.on("connection", (ws, req) => {
                     break;
                 
                 case "ping":
-
                     ws.send(
                         JSON.stringify({
                             type: "pong",
