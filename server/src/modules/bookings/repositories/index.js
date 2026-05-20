@@ -23,4 +23,9 @@ export {
     createBooking
 } from './create-booking.repo.js';
 
+export {
+    default as 
+    updateTechnicianAvailabilityStatus
+} from './update-technician-availability-status.repo.js';
+
 

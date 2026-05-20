@@ -17,9 +17,10 @@ const STATUS_TIMESTAMP = {
 };
 
 const updateBookingRequestStatus = async(
-    bookingRequestId,
+    client,
     status,
-    client
+    technicianId,
+    bookingRequestId
 ) => {
     
     const timestampColumn =
@@ -36,9 +37,10 @@ const updateBookingRequestStatus = async(
 
     const query = `
         UPDATE booking_requests
-            SET status = $1,
+        SET status = $1,
+            technician_id = $2
             ${timestampColumn} = NOW()
-        WHERE id = $2
+        WHERE id = $3
         RETURNING  (
             to_jsonb(booking_requests)
             -'created_at',
@@ -48,7 +50,11 @@ const updateBookingRequestStatus = async(
 
     const result = await client.query(
         query,
-        [status, bookingRequestId]
+        [
+            status,
+            technicianId,
+            bookingRequestId
+        ]
     );
 
     if(result.rowCount === 0){

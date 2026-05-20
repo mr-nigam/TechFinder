@@ -10,7 +10,6 @@ const notifyTechnician = async(
     event,
     data
 )=>{
-
     const ws = getSocket(
         data.technicianId
     );

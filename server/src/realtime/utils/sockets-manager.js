@@ -17,9 +17,7 @@ const removeSocket =
 };
 
 
-
 export {
-    technicianSockets,
     addSocket,
     getSocket,
     removeSocket

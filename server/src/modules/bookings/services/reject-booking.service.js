@@ -24,8 +24,8 @@ import {
 } from '#notifications/services/index.js';
 
 const rejectBooking = async( 
-    technician, 
-    data 
+    data,
+    technician
 ) => {
 
 };

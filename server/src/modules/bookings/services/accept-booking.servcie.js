@@ -4,40 +4,42 @@ import pool from
 import crypto from 'crypto';
 
 import {
-    updateBookingRequestStatus,
-    createBooking
-} from '../repositories/index.js';
-
-import {
     ApiError
 } from '#shared';
 
 import {
     setLock,
-    releaseLock,
-    getBookingCache
+    releaseLock
 } from '../bookingRedis/cache.js';
 
 import {
-    notifyUser,
-    notifyTechnician
+    notifyUser
 } from '#notifications/services/index.js';
 
-// send confirmation message to user and coordinates of techie, all details of booking
-// send onformation message to techie and update his assiged to show this booking and send him all details 
-// setup a new chat session between both
-// delete booking_request from db using direct method or by queue if expired
+import {
+    createBooking,
+    updateBookingRequestStatus,
+    updateTechnicianAvailabilityStatus
+} from '../repositories/index.js';
 
+import {
+    acceptedEmergencyBookings
+} from './index.js';
+
+import sendRealtime from 
+'#realtime/utils/send.realtime.js';
+ 
+// setup a new chat session between both
+// send normal notifications also
 const acceptBooking = async( 
-    technician, 
-    data 
+    ws,
+    data,
+    technician
 ) => {
     const query = `
         SELECT search_session_id
         FROM booking_requests
-        WHERE id = $1
-            AND user_id = $2
-            AND deleted_at IS NULL;
+        WHERE id = $1;
     `;
     
     const result  = await pool.query(
@@ -46,52 +48,71 @@ const acceptBooking = async(
     );
 
     const searchSessionId = 
-        result.rows[0].searchSessionId;
+        result.rows[0]
+        .search_session_id;
         
-    const draftKey = 
-        `booking_draft:${searchSessionId}`;
+    // const draftKey = 
+    //     `booking_draft:${searchSessionId}`;
 
-    const lockKey =  
+    const lockKey =
         `booking_lock:${searchSessionId}`;
     
-    const lockValue =  crypto.randomUUID();
+    const lockValue = crypto.randomUUID();
 
-    const acquired = await setLock(
-        lockKey,
-        lockValue
-    );
+    const acquired = 
+        await setLock(
+            lockKey,
+            lockValue
+        );
 
     if(!acquired){
-        throw new Error(
+        throw new ApiError(
+            409,
             "Booking already processing"
         );
     }
 
     const client = await pool.connect();
 
+    let booking;
     try{
+
         await client.query("BEGIN");
+
+        await updateTechnicianAvailabilityStatus(
+            technician.id,
+            client
+        );
 
         const bookingRequest =  
             await updateBookingRequestStatus(
-                data.bookingRequestId,
+                client,
                 "accepted",
-                client
+                technician.id,
+                data.bookingRequestId
             );
 
-        const booking = await createBooking(
+        bookingRequest.technician_id = technician.id;
+
+        booking = await createBooking(
             bookingRequest,
             client
         );
-        
+
         await client.query("COMMIT");
+
     }catch(err){
 
         try{
             await client.query("ROLLBACK");
         }catch {}
         
-        if(err.codes === "23505"){
+        await releaseLock(
+            lockKey,
+            lockValue
+        );
+
+        if(err.code === "23505"){
             if(
                 err.constraint?.includes("search_session_id") ||
                 err.constraint?.includes("booking_request_id")    
@@ -108,8 +129,52 @@ const acceptBooking = async(
             err.message || "Booking has already done"
         );
     }finally{
+
+        await releaseLock(
+            lockKey,
+            lockValue
+        );
+        
         client.release();
     }
+    
+    if(booking.booking_type === "emergency"){
+        acceptedEmergencyBookings.set(
+            data.bookingRequestId,
+            {
+                bookingId: booking.id,
+                bookingCode: booking.bookingCode
+            }
+        );
+        
+        setTimeout(() => {
+            acceptedEmergencyBookings.delete(
+                data.bookingRequestId
+            );
+
+        }, 90000);
+    }
+    
+    await notifyUser({
+        event:"technician_booked_successfully",
+        data: {
+            userId: booking.user_id,
+            bookingId: booking.id,
+            bookingCode: booking.bookingCode
+        }
+    });
+    
+    //to techi
+    sendRealtime(
+        ws,
+        {
+            event:"booking_confirmed",
+            data:{
+                bookingId: booking.id,
+                bookingCode: booking.bookingCode
+            }
+        }
+    )
 };
 
 

@@ -31,3 +31,9 @@ export {
 export {
     default as sendBookingRequest
 } from './send-booking-request.service.js';
+
+
+export {
+    acceptedEmergencyBookings,
+    dispatchEmergencyBookingRequest
+} from './emergency-dispatch.service.js';

@@ -14,10 +14,10 @@ asyncHandler( async (ws, data) => {
     let result = "";
     
     if(response === "accepted"){
-
         result = await acceptBooking(
-            technician,
-            data
+            ws,
+            data,
+            technician
         );
 
     }else if(response === "rejected"){
