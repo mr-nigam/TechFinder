@@ -19,9 +19,6 @@ import {
     getSocket
 } from './utils/sockets-manager.js';
 
-import broadcast from 
-'./utils/broadcast.realtime.js';
-
 
 const app = express();
 
@@ -134,7 +131,6 @@ wss.on("connection", (ws, req) => {
                     break;
 
                 default:
-
                     ws.send(
                         JSON.stringify({
                             type: "error",
@@ -187,7 +183,7 @@ const interval = setInterval(() => {
 
     wss.technicianSockets.forEach((ws) => {
 
-        if (ws.isAlive === false) {
+        if(ws.isAlive === false){
             return ws.terminate();
         }
 

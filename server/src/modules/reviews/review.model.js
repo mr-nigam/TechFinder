@@ -1,7 +1,9 @@
 import pool from 
 '#config/database/postgres.js';
 
-import { createUpdatedAtTrigger } from '#shared';
+import { 
+    createUpdatedAtTrigger 
+} from '#shared';
 
 
 const createReviewsTable = async() => {
@@ -9,7 +11,11 @@ const createReviewsTable = async() => {
     try{
         await pool.query(`
             CREATE TABLE IF NOT EXISTS reviews (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                id UUID PRIMARY KEY 
+                    DEFAULT gen_random_uuid(),
+                
+                booking_code VARCHAR(20)
+                    UNIQUE NOT NULL,
                 
                 user_id UUID 
                     REFERENCES users(id)
@@ -28,7 +34,11 @@ const createReviewsTable = async() => {
                 
                 service_type_name 
                     VARCHAR(120) NOT NULL,
-
+                
+                service_id UUID NOT NULL,
+                    REFERENCES services(id)
+                    ON DELETE SET NULL,
+                
                 service_name 
                     VARCHAR(20) NOT NULL,
 

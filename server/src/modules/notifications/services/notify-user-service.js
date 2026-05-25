@@ -6,10 +6,10 @@ import {
 } from '#realtime/utils/sockets-manager.js';
 
 
-const notifyUser = async(
+const notifyUser = async({
     event,
     data
-)=>{
+})=>{
 
     const ws = getSocket(
         data.userId

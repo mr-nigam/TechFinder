@@ -1,12 +1,13 @@
 import bookingRedis from 
 '#config/redis/booking.redis.js';
 
+import profileCard from 
+'../utils/profile-cards.util.js';
+
 import {
     getManyCache
 } from '#infra';
 
-import profileCard from 
-'../utils/profile-cards.util.js';
 
 const cacheSearchResults = async(
     searchSessionId,
@@ -204,6 +205,7 @@ const releaseLock = async(
     }
 
 }
+
 
 export {
     cacheSearchResults,

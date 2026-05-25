@@ -4,12 +4,15 @@
   "description": "technician finder application",
   "keywords": [
     "mern",
-    "mongodb",
+    "postgre",
+    "postgis",
+    "redis",
+    "redisgeo",
+    "bullmq",
     "node",
     "react",
     "express",
     "jwt",
-    "redis",
     "websocket",
     "mapbox",
     "javascript"

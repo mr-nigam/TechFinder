@@ -168,6 +168,78 @@ const geoSearch = async (
     }
 };
 
+const cacheTechnicianReviews = async(
+    technicianUsername,
+    reviews
+)=>{
+
+    const techCacheKey = 
+        `tech:reviews:${technicianUsername}`;
+
+    if(!reviews.length){
+        return;
+    }
+
+    const pipeline =
+        infraRedis.pipeline();
+
+    pipeline.del(key);
+
+    pipeline.rpush(
+        key,
+        ...reviews
+    );
+
+    pipeline.expire(
+        key,
+        300
+    );
+
+    await pipeline.exec();
+};
+
+const getTechnicianReviews = async(
+    technicianUsername,
+    page,
+    limit
+)=>{
+    const techCacheKey = 
+        `tech:reviews:${technicianUsername}`;
+        
+    const start = page*limit-1;
+    const end = page*limit;
+
+    const pipeline = infraRedis.pipeline();
+
+    pipeline.lrange(
+        techCacheKey,
+        start,
+        end
+    );
+    
+
+    pipeline.llen(key);
+
+    const results = 
+        await pipeline.exec();
+
+    const reviews =
+        results[0][1] || [];
+
+    const total =
+        results[1][1] || 0;
+
+    return {
+        page,
+        limit,
+        totalPages: Math.ceil(
+            total / limit
+        ),
+        reviews
+    };
+
+};
+
 
 export {
     getCache,

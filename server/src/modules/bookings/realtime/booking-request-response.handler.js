@@ -6,6 +6,12 @@ import {
     ApiError
 } from '#shared';
 
+import {
+    acceptBooking,
+    rejectBooking
+} from '../services/index.js';
+
+
 const handleBookingRequestResponse = 
 asyncHandler( async (ws, data) => { 
     const technician = ws.technician;
@@ -22,8 +28,9 @@ asyncHandler( async (ws, data) => {
 
     }else if(response === "rejected"){
         result = await rejectBooking(
-            technician,
-            data
+            ws,
+            data,
+            technician
         );
 
     }else{

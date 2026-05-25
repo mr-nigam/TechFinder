@@ -7,9 +7,10 @@ const createNotificationsTable = async() => {
         
         await pool.query(`
             CREATE TABLE IF NOT EXISTS notifications (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                id UUID PRIMARY KEY 
+                    DEFAULT gen_random_uuid(),
 
-                recipient_id UUID NOT NULL 
+                recipient_id UUID NOT NULL,
                 recipient_type VARCHAR(20) NOT NULL
                     CHECK (
                         recipient_type IN (
@@ -44,8 +45,8 @@ const createNotificationsTable = async() => {
         `);
 
         await pool.query(`
-            CREATE INDEX IF NOT EXISTS user_notifications_idx
-            ON notifications(user_id)
+            CREATE INDEX IF NOT EXISTS recipient_notifications_idx
+            ON notifications(recipient_id)
             WHERE deleted_at IS NULL;
         `);
 

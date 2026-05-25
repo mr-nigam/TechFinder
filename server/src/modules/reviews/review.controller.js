@@ -14,12 +14,19 @@ import {
     getTechnicianReviews
 } from '#repositories/review.repository.js';
 
+import {
+    setCache,
+    getCache
+} from '#infra';
+
+import redisInfra from
+'#config/redis/infra.redis.js';
 
 const reviews_fields = `
     id,
-    service_type_name,
     service_name,
     booking_type,
+    service_type_name,
     rating,
     title,
     body,
@@ -27,6 +34,7 @@ const reviews_fields = `
     created_at
 `;
 
+// use redis cache for faster access
 const createReview = asyncHandler(async (req,res) => {
     const user = req.user;
     const bookingId = req.params?.bookingId?.trim() || null;
@@ -44,10 +52,12 @@ const createReview = asyncHandler(async (req,res) => {
     const query = `
         SELECT 
             id,
+            booking_code,
             user_id,
             technician_id,
             service_type_id,
             service_type_name,
+            service_id,
             service_name,
             booking_type
         FROM bookings
@@ -75,29 +85,36 @@ const createReview = asyncHandler(async (req,res) => {
 
         const query = `
             INSERT INTO reviews(
+                booking_code,
                 user_id,
                 technician_id,
                 booking_id,
                 service_type_id,
                 service_type_name,
+                service_id,
                 service_name,
                 booking_type,
                 rating,
                 title,
                 body
             )
-            VALUES( $1, $2, $3, $4, $5,
-                $6, $7, $8, $9, $10
+            VALUES( 
+                $1, $2, $3, $4,
+                $5, $6, $7, $8,
+                $9, $10, $11, $12
             )
+            
             RETURNING ${reviews_fields};
         `;
 
         const values = [
+            bookingData.booking_code,
             bookingData.user_id,
             bookingData.technician_id,
             bookingData.id,
             bookingData.service_type_id,
             bookingData.service_type_name,
+            bookingData.service_id,
             bookingData.service_name,
             bookingData.booking_type,
             rating,
@@ -278,6 +295,12 @@ const getReviews = asyncHandler(async (req,res) => {
     limit = Math.min(Math.max(parseInt(limit) || 10, 10), 10);
     page = Math.max(parseInt(page) || 1, 1);
 
+    const techCacheKey = `tech:reviews:${username}`;
+
+    if(redisInfra.get(techCacheKey)){
+
+    }
+    
     username = username?.trim() || null;
     sortBy = sortBy?.trim() || "";
 
