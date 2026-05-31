@@ -2,12 +2,27 @@ import pool from
 '#config/database/postgres.js';
 
 
+const reviews_fields = `
+    "r.id",
+    "r.service_name",
+    "r.booking_type",
+    "r.service_type_name",
+    "r.rating",
+    "r.title",
+    "r.body",
+    "r.is_edited",
+    "r.created_at",
+    "jsonb_build_object(
+        ''
+    )"
+`;
+
 const getTechnicianReviews = async({
     limit,
     sortBy,
     sortType,
     username,
-    offset
+    offset = 500
 })=>{
 
     const query = `
@@ -48,5 +63,32 @@ const getTechnicianReviews = async({
     return result.rows;
 };
 
+const getReviewById = async(
+    reviewId
+)=>{
+    const query = `
+        SELECT
+            reviewer.username AS reviewer_username,
+            reviewer.first_name AS reviewer_first_name,
+            reviewer.last_name AS reviewer_last_name,
+            reviewer.profile_picture_url,
+            r.id,
+            r.service_name,
+            r.booking_type,
+            r.service_type_name,
+            r.rating,
+            r.title,
+            r.body,
+            r.is_edited,
+            r.created_at,
+            jsonb_build_object(
+                ra.
+            )
+    `;
+};
 
-export default getTechnicianReviews;
+
+export {
+    getTechnicianReviews,
+    getReviewById
+};

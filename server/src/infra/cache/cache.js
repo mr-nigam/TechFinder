@@ -168,43 +168,44 @@ const geoSearch = async (
     }
 };
 
-const cacheTechnicianReviews = async(
-    technicianUsername,
-    reviews
+const cachePaginatedList = async(
+    cacheKey,
+    items,
+    ttl = 300
 )=>{
 
-    const techCacheKey = 
-        `tech:reviews:${technicianUsername}`;
+    // const techCacheKey = 
+    //     `tech:reviews:${technicianUsername}`;
 
-    if(!reviews.length){
+    if(!items.length){
         return;
     }
 
     const pipeline =
         infraRedis.pipeline();
 
-    pipeline.del(key);
+    pipeline.del(cacheKey);
 
     pipeline.rpush(
-        key,
-        ...reviews
+        cacheKey,
+        ...items
     );
 
     pipeline.expire(
-        key,
-        300
+        cacheKey,
+        ttl
     );
 
     await pipeline.exec();
 };
 
-const getTechnicianReviews = async(
-    technicianUsername,
+const getPaginatedList = async(
+    cacheKey,
     page,
     limit
 )=>{
-    const techCacheKey = 
-        `tech:reviews:${technicianUsername}`;
+    // const techCacheKey = 
+    //     `tech:reviews:${technicianUsername}`;
         
     const start = page*limit-1;
     const end = page*limit;
@@ -212,18 +213,18 @@ const getTechnicianReviews = async(
     const pipeline = infraRedis.pipeline();
 
     pipeline.lrange(
-        techCacheKey,
+        cacheKey,
         start,
         end
     );
     
 
-    pipeline.llen(key);
+    pipeline.llen(cacheKey);
 
     const results = 
         await pipeline.exec();
 
-    const reviews =
+    const items =
         results[0][1] || [];
 
     const total =
@@ -235,7 +236,7 @@ const getTechnicianReviews = async(
         totalPages: Math.ceil(
             total / limit
         ),
-        reviews
+        items
     };
 
 };
@@ -249,5 +250,7 @@ export {
     deleteMultipleCache,
     invalidateCaches,
     geoAdd,
-    geoSearch
+    geoSearch,
+    cachePaginatedList,
+    getPaginatedList
 }

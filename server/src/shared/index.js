@@ -7,6 +7,7 @@ export { default as removeLocalFile } from './utils/file.js';
 // password
 export { default as hashPassword } from './utils/password.util.js';
 export { default as formatMyProfile } from './utils/user.util.js';
+export { default as getQueryOptions } from './utils/query-options.js';
 
 // DB triggers
 export { 

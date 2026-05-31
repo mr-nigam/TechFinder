@@ -5,7 +5,7 @@ import {
     ApiError,
     ApiResponse,
     asyncHandler,
-
+    getQueryOptions,
     isValidUUID,
     validateReviewData
 } from '#shared';
@@ -15,23 +15,24 @@ import {
 } from '#repositories/review.repository.js';
 
 import {
-    setCache,
-    getCache
+    cachePaginatedList,
+    getPaginatedList
 } from '#infra';
 
-import redisInfra from
-'#config/redis/infra.redis.js';
 
 const reviews_fields = `
-    id,
-    service_name,
-    booking_type,
-    service_type_name,
-    rating,
-    title,
-    body,
-    is_edited,
-    created_at
+    "r.id",
+    "r.service_name",
+    "r.booking_type",
+    "r.service_type_name",
+    "r.rating",
+    "r.title",
+    "r.body",
+    "r.is_edited",
+    "r.created_at",
+    "jsonb_build_object(
+        ''
+    )"
 `;
 
 // use redis cache for faster access
@@ -194,6 +195,7 @@ const updateReview = asyncHandler(async (req,res) => {
     `;
 });
 
+// use background queue for deletion jobs
 const deleteReview = asyncHandler(async (req,res) => { 
     const user = req.user;
     const reviewId = req.params?.reviewId?.trim() || null;
@@ -233,6 +235,67 @@ const deleteReview = asyncHandler(async (req,res) => {
                 200,
                 {},
                 "Review deleted successfully"
+            )
+        );
+});
+
+const getReviews = asyncHandler(async (req,res) => {
+    const {
+        page = 1,
+        limit = 10,
+        filter,
+        sortBy,
+        sortType
+    } = getQueryOptions(req.query);
+    
+    const queryKey = [
+        filter ?? "all",
+        sortBy ?? "createdAt",
+        sortType ?? "desc"
+    ].join(":");
+    
+    const technicianUsername = 
+        req.query.username?.trim() || null;
+
+    if(!technicianUsername){
+        throw new ApiError(
+            400,
+            "Technician username is missing"
+        );
+    }
+
+    const cacheKey = 
+        `reviews:t:${technicianUsername}:${queryKey}`;
+
+    let reviews = []
+    try{
+        reviews = 
+            await getPaginatedList(
+                cachekKey,
+                page,
+                limit
+            ) ?? [];
+    }catch {}
+
+    
+    if(reviews.length === 0){
+        reviews = await getTechnicianReviews({
+            limit,
+            sortBy,
+            sortType,
+            username,
+            offset
+        });
+    }
+
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                { reviews },
+                "Reviews fetched successfully"
             )
         );
 });
@@ -283,69 +346,6 @@ const getReviewById = asyncHandler(async (req,res) => {
         );
 });
 
-const getReviews = asyncHandler(async (req,res) => { 
-    let {
-        page = 1,
-        limit,
-        sortBy,
-        sortType,
-        username,
-    } = req.query;
-
-    limit = Math.min(Math.max(parseInt(limit) || 10, 10), 10);
-    page = Math.max(parseInt(page) || 1, 1);
-
-    const techCacheKey = `tech:reviews:${username}`;
-
-    if(redisInfra.get(techCacheKey)){
-
-    }
-    
-    username = username?.trim() || null;
-    sortBy = sortBy?.trim() || "";
-
-    sortType = sortType?.trim()?.toUpperCase();
-
-    sortType = sortType === "ASC"? "ASC": "DESC";
-
-    const skip = (page-1)*limit;
-
-    if(!username){
-        throw new ApiError(
-            400,
-            "username is missing"
-        );
-    }
-
-    const allowedSortBy = [
-        "created_at",
-        "rating",
-        "service_type_name"
-    ];
-
-    if(!allowedSortBy.includes(sortBy)){
-        sortBy = "created_at";
-    }
-
-    const reviews = await getTechnicianReviews({
-        limit,
-        sortBy,
-        sortType,
-        username,
-        offset
-    });
-
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                { reviews },
-                "Reviews fetched successfully"
-            )
-        );
-});
-
 
 export {
     createReview,
@@ -353,4 +353,4 @@ export {
     deleteReview,
     getReviewById,
     getReviews
-}
+};

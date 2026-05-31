@@ -23,7 +23,7 @@ const createAddressesAssetsTable = async () => {
                     )),
 
                 media_type VARCHAR(20) NOT NULL
-                    CHECK(asset_type IN (
+                    CHECK(media_type IN (
                         'image',
                         'video'
                     )),
@@ -35,8 +35,8 @@ const createAddressesAssetsTable = async () => {
                 size_bytes INT NOT NULL,
                 duration NUMERIC(8,2)
                     CHECK (
-                        (asset_type = 'videos' AND duration IS NOT NULL)
-                        OR (asset_type != 'videos')
+                        (media_type = 'videos' AND duration IS NOT NULL)
+                        OR (media_type != 'videos')
                     ),
 
                 sort_order INT DEFAULT 1
