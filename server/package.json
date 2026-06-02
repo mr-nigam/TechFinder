@@ -24,8 +24,8 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "worker": "nodemon src/bootstrap/redis.bootstrap.js",
-    "all": "concurrently \"npm run dev\" \"npm run worker\"",
-    "start": "node src/server.js"
+    "socket": "nodemon src/realtime/server.js",
+      "all": "concurrently \"npm run dev\" \"npm run worker\" \"npm run socket\""
   },
   "imports": {
     "#shared": "./src/shared/index.js",
@@ -35,7 +35,7 @@
     "#queues": "./src/queues/index.js",
     "#queues/*": "./src/queues/*",
     "#config/*": "./src/config/*",
-    "#repositories/*": "./src/repositories/*",
+    "#repositories": "./src/repositories/index.js",
     "#middlewares/*": "./src/middlewares/*",
     "#lib/*": "./src/lib/*",
     "#bootstrap/*": "./src/bootstrap/*",

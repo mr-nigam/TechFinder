@@ -5,9 +5,8 @@ import {
     asyncHandler
 } from '#shared';
 
-import {
-    sendBookingRequest
-} from '../services/send-booking-request.service.js';
+import sendBookingRequest from 
+'../services/send-booking-request.service.js';
 
 
 const handleSendBookingRequest = 

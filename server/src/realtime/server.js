@@ -5,7 +5,6 @@ import { WebSocketServer } from 'ws';
 
 import {
     handleInstantTechnicianSearch,
-    handleScheduledTechnicianSearch,
     handleEmergencyBooking,
     handleGetTechnicianProfile,
     handleSendBookingRequest,
@@ -13,10 +12,10 @@ import {
 } from '#modules/bookings/realtime/index.js';
 
 import {
-    technicianSockets,
     addSocket,
     removeSocket,
-    getSocket
+    getSocket,
+    technicianSockets
 } from './utils/sockets-manager.js';
 
 
@@ -181,7 +180,7 @@ wss.on("connection", (ws, req) => {
  */
 const interval = setInterval(() => {
 
-    wss.technicianSockets.forEach((ws) => {
+    technicianSockets.forEach((ws) => {
 
         if(ws.isAlive === false){
             return ws.terminate();
@@ -224,6 +223,6 @@ const PORT = process.env.WS_PORT || 7000;
 
 server.listen(PORT, () => {
     console.log(
-        `Server running on http://localhost:${PORT}`
+        `🚀 RealTime Server running on http://localhost:${PORT}`
     );
 });

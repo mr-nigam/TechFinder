@@ -4,7 +4,7 @@ import {
 
 import {
     verifyUserPassword
-} from '#services/auth.service.js';
+} from './index.js';
 
 
 const processAccountStatusChange = async ({

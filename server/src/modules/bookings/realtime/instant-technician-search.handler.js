@@ -1,9 +1,8 @@
 import validateBookingData from 
 '../validator/booking.validate.js';
 
-import {
-    instantTechnicianSearch
-} from '../services/instant-technician-search.service.js';
+import instantTechnicianSearch from 
+'../services/instant-technician-search.service.js';
 
 import sendRealtime from 
 '#realtime/utils/send.realtime.js';

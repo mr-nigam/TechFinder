@@ -2,13 +2,13 @@ import { useState } from "react";
 
 import {
     Navbar,
-    Footer
-} from '#components';
+    Footer,
+} from "#components";
 
 
 const Login = () => {
     const [formData, setFormData] = useState({
-        email: "",
+        identifier: "",
         password: "",
     });
 
@@ -26,12 +26,14 @@ const Login = () => {
     const validate = () => {
         const newErrors = {};
 
-        if (!formData.email.trim()) {
-            newErrors.email = "Email is required";
+        if (!formData.identifier.trim()) {
+            newErrors.identifier =
+                "Email, phone number or username is required";
         }
 
         if (!formData.password.trim()) {
-            newErrors.password = "Password is required";
+            newErrors.password =
+                "Password is required";
         }
 
         setErrors(newErrors);
@@ -45,9 +47,14 @@ const Login = () => {
         if (!validate()) return;
 
         try {
-            console.log(formData);
+            const payload = {
+                identifier: formData.identifier,
+                password: formData.password,
+            };
 
-            // await loginUser(formData);
+            console.log(payload);
+
+            // await loginUser(payload);
         } catch (error) {
             console.error(error);
         }
@@ -55,11 +62,13 @@ const Login = () => {
 
     return (
         <>
-            <Navbar/>
+            <Navbar />
+
             <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 px-4 py-10">
                 <div className="w-full max-w-md">
                     <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
 
+                        {/* Header */}
                         <div className="text-center mb-8">
                             <h2 className="text-3xl font-bold text-slate-800">
                                 Welcome Back
@@ -70,23 +79,25 @@ const Login = () => {
                             </p>
                         </div>
 
+                        {/* Form */}
                         <form
                             onSubmit={handleSubmit}
                             className="space-y-5"
                         >
                             <div>
                                 <input
-                                    type="email"
-                                    name="email"
-                                    placeholder="Email Address"
-                                    value={formData.email}
+                                    type="text"
+                                    name="identifier"
+                                    placeholder="Email, Phone or Username"
+                                    autoComplete="username"
+                                    value={formData.identifier}
                                     onChange={handleChange}
                                     className="w-full px-4 py-3 rounded-lg border-2 border-slate-200 bg-slate-50 focus:outline-none focus:border-blue-600 focus:bg-white transition"
                                 />
 
-                                {errors.email && (
+                                {errors.identifier && (
                                     <p className="text-red-500 text-sm mt-1">
-                                        {errors.email}
+                                        {errors.identifier}
                                     </p>
                                 )}
                             </div>
@@ -96,6 +107,7 @@ const Login = () => {
                                     type="password"
                                     name="password"
                                     placeholder="Password"
+                                    autoComplete="current-password"
                                     value={formData.password}
                                     onChange={handleChange}
                                     className="w-full px-4 py-3 rounded-lg border-2 border-slate-200 bg-slate-50 focus:outline-none focus:border-blue-600 focus:bg-white transition"
@@ -125,6 +137,7 @@ const Login = () => {
                             </button>
                         </form>
 
+                        {/* Divider */}
                         <div className="relative my-6">
                             <div className="absolute inset-0 flex items-center">
                                 <div className="w-full border-t border-slate-300"></div>
@@ -137,6 +150,7 @@ const Login = () => {
                             </div>
                         </div>
 
+                        {/* Social Login */}
                         <div className="space-y-3">
                             <button
                                 type="button"
@@ -158,6 +172,7 @@ const Login = () => {
                             </button>
                         </div>
 
+                        {/* Register */}
                         <div className="mt-6 pt-6 border-t text-center">
                             <p className="text-slate-600">
                                 Don't have an account?{" "}
@@ -169,10 +184,12 @@ const Login = () => {
                                 </a>
                             </p>
                         </div>
+
                     </div>
                 </div>
             </section>
-            <Footer/>
+
+            <Footer />
         </>
     );
 };

@@ -43,7 +43,7 @@ import {
 
 import {
     createUser
-} from '#repositories/auth.repository.js';
+} from '#repositories';
 
 
 const register = asyncHandler(async (req, res) => {

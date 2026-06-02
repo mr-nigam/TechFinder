@@ -13,8 +13,8 @@ const createRedisConnection = ({
     const redis = new Redis({
         host,
         port: Number(port),
-        password,
-        db,
+        password: password || undefined,
+        db: Number(db),
 
         maxRetriesPerRequest,
 
@@ -32,6 +32,10 @@ const createRedisConnection = ({
 
     redis.on("connect", () => {
         console.log(`✅ ${name} Connected`);
+    });
+
+    redis.on("ready", () => {
+        console.log(`🚀 ${name} Ready`);
     });
 
     redis.on("error", (err) => {

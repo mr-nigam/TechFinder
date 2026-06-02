@@ -12,7 +12,7 @@ import {
 
 import {
     getTechnicianReviews
-} from '#repositories/review.repository.js';
+} from '#repositories';
 
 import {
     cachePaginatedList,

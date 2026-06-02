@@ -1,3 +1,5 @@
+console.log("SOCKET MANAGER LOADED");
+
 const technicianSockets =
     new Map();
 
@@ -20,5 +22,6 @@ const removeSocket =
 export {
     addSocket,
     getSocket,
-    removeSocket
+    removeSocket,
+    technicianSockets
 };

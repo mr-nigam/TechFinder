@@ -1,5 +1,5 @@
-import bookingRedis from
-'../redis/booking.redis.js';
+import bookingRedis from 
+'#config/redis/booking.redis.js';
 
 const generateBookingCode = async () => {
 

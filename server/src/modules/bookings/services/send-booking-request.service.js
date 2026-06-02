@@ -8,8 +8,9 @@ import {
     createBookingsRequest
 } from '../repositories/index.js'
 
-import notifyTechnician from
-'#notifications/services/index.js';
+import { 
+    notifyTechnician
+} from '#notifications/services/index.js';
 
 import buildBookingRequestPayload from
 '../utils/booking-request.utils.js';

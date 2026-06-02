@@ -1,6 +1,4 @@
-import {
-    ApiError
-} from './apiError.js';
+import ApiError from './apiError.js';
 
 
 const validateReviewData = (data) => {

@@ -7,7 +7,7 @@ import {
     logIn,
     logOut,
     refreshAccessToken
-} from './auth.controller.js';
+} from './controllers/auth.controller.js';
 
 import {
     forgotPassword,

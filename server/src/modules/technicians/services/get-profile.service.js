@@ -10,17 +10,14 @@ import {
     geoAdd
 } from '#infra';
 
-import {
-    validateTechnicianStatus
-} from './validate-technician-status.service.js';
+import validateTechnicianStatus from 
+'./validate-technician-status.service.js';
 
-import {
-    getProfileData
-} from '../repositoris/get-profile.repo.js';
+import getProfileData from 
+'../repositoris/get-profile.repo.js';
 
-import {
-    getCoordinates
-} from '../repositoris/get-coordinates.repo.js';
+import getCoordinates from 
+'../repositoris/get-coordinates.repo.js';
 
 
 const getTechnicianProfileFromDB = async(
