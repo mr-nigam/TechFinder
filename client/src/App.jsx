@@ -8,7 +8,9 @@ import './App.css';
 import {
     Home,
     Login,
+    AddPhone,
     Register,
+    InstantBooking,
     EmergencyBooking,
     TechnicianProfile
 } from '#pages';
@@ -40,6 +42,11 @@ function App() {
             /> */}
 
             <Route
+                path="/booking/instant"
+                element={<InstantBooking />}
+            />
+            
+            <Route
                 path="/booking/emergency"
                 element={<EmergencyBooking />}
             />
@@ -48,6 +55,12 @@ function App() {
                 path="/technician/:id"
                 element={<TechnicianProfile />}
             />
+
+            <Route
+                path="/profile/phones/add"
+                element={<AddPhone />}
+            />
+
         </Routes>
     );
 }

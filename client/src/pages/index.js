@@ -6,6 +6,15 @@ export {
     default as EmergencyBooking 
 } from "./booking/EmergencyBooking";
 
+export { 
+    default as InstantBooking 
+} from "./booking/InstantBooking";
+
 export {
     default as TechnicianProfile
 } from './technician/TechnicianProfile';
+
+export {
+    default as AddPhone
+} from './phone/AddPhone';
+ 

@@ -41,8 +41,7 @@ import {
     phoneRouter,
     profileRouter,
     securityRouter
-} from 
-'#modules/users/routes/index.js';
+} from '#modules/users/routes/index.js';
 
 
 app.use("/api/v1/auth", authRouter);
