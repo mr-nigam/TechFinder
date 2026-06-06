@@ -1,15 +1,11 @@
 import jwt from 'jsonwebtoken';
-import bcrypt from "bcrypt";
+import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 
 import pool from 
 '#config/database/postgres.js';
 
 import {
-    otpQueue,
-    setCache,
-    getCache,
-    deleteCache,
     invalidateCaches
 } from '#infra';
 
@@ -17,9 +13,6 @@ import {
     ApiError,
     ApiResponse,
     asyncHandler,
-
-    hashPassword,
-    
     generateAccessToken,
     generateRefreshToken,
     setAuthCookies,

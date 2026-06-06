@@ -8,10 +8,11 @@ import {
 
 const notifyTechnician = async(
     event,
-    data
+    data,
+    technicianId
 )=>{
     const ws = getSocket(
-        data.technicianId
+        technicianId
     );
 
     if(!ws){

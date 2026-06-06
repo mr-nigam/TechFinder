@@ -10,6 +10,31 @@ import {
 } from '#infra';
 
 
+const searchActiveTechnicians = async (
+    lng,
+    lat,
+    serviceCategoryId
+) => {
+
+    let technicians =
+        await searchActiveTechniciansFromRedis(
+            lng,
+            lat,
+            serviceCategoryId
+        );
+
+    if(technicians.length < 5){
+        technicians =
+            await searchActiveTechniciansFromDB(
+                lng,
+                lat,
+                serviceCategoryId
+            );
+    }
+
+    return technicians;
+};
+
 const searchActiveTechniciansFromRedis = async (
     lng,
     lat,
@@ -44,7 +69,7 @@ const searchActiveTechniciansFromDB = async (
     serviceCategoryId
 ) => {
 
-    const technicians = await getInstantTechnicians(
+    const technicians = await getActiveTechnicians(
         lng,
         lat,
         serviceCategoryId
@@ -56,34 +81,9 @@ const searchActiveTechniciansFromDB = async (
     return rankedProfiles;
 };
 
-const searchActiveTechnicians = async (
-    lng,
-    lat,
-    serviceCategoryId
-) => {
-
-    let technicians =
-        await searchActiveTechniciansFromRedis(
-            lng,
-            lat,
-            serviceCategoryId
-        );
-
-    if(technicians.length < 5){
-        technicians =
-            await searchActiveTechniciansFromDB(
-                lng,
-                lat,
-                serviceCategoryId
-            );
-    }
-
-    return technicians;
-};
-
 
 export {
+    searchActiveTechnicians,
     searchActiveTechniciansFromRedis,
-    searchActiveTechniciansFromDB,
-    searchActiveTechnicians
+    searchActiveTechniciansFromDB
 };

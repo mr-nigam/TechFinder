@@ -4,7 +4,7 @@ import {
     hasEmpty,
     isValidPhone,
     isValidEmail,
-} from '#shared';
+} from '../index.js';
 
 
 const normalizeRegisterData = (body) => {

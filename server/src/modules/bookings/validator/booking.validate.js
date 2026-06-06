@@ -13,10 +13,10 @@ const validateBookingData = (data) =>{
     const{ 
         addressId,
         serviceId,
-        phoneType = "primary",
         phoneId,
-        bookingType,
         serviceCategoryId,
+        phoneType = "primary",
+        bookingType,
         page = 1,
         limit = 10,
         customerNote = ""

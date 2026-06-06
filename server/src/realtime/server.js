@@ -87,11 +87,32 @@ wss.on("connection", (ws, req) => {
                     );
                     break;
                 
+                case "technician_profile":
+                    await handleGetTechnicianProfile(
+                        ws,
+                        data
+                    )
+                    break;
+
+                case "send_booking_request":
+                    await handleSendBookingRequest(
+                        ws,
+                        data
+                    )
+                    break;
+
                  case "search_scheduled_technicians":
                     await handleScheduledTechnicianSearch(
                         ws,
                         data
                     );
+                    break;
+                
+                 case "booking_request_response":
+                    await handleBookingRequestResponse(
+                        ws,
+                        data
+                    )
                     break;
                 
                 case "create_emergency_booking":
@@ -101,27 +122,6 @@ wss.on("connection", (ws, req) => {
                     );
                     break;
 
-                case "technician_profile":
-                    await handleGetTechnicianProfile(
-                        ws,
-                        data
-                    )
-                    break;
-                
-                case "send_booking_request":
-                    await handleSendBookingRequest(
-                        ws,
-                        data
-                    )
-                    break;
-
-                case "booking_request_response":
-                    await handleBookingRequestResponse(
-                        ws,
-                        data
-                    )
-                    break;
-                
                 case "ping":
                     ws.send(
                         JSON.stringify({

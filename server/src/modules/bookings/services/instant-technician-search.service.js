@@ -9,9 +9,9 @@ import {
 } from '../bookingRedis/cache.js';
 
 import {
-    searchActiveTechniciansFromRedis,
-    searchActiveTechniciansFromDB
+    searchActiveTechnicians
 } from './index.js';
+
 
 const instantTechnicianSearch = async (
     bookingDetails

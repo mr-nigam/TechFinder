@@ -9,7 +9,6 @@ import {
     ApiError
 } from '#shared';
 
-
 import {
     notifyUser
 } from '#notifications/services/index.js';

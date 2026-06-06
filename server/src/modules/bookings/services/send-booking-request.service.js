@@ -64,7 +64,8 @@ const sendBookingRequest = async (
 
     await notifyTechnician(
         "instant_booking_request",
-        technicianBookingRequest
+        technicianBookingRequest,
+        bookingDetails.technician_id
     );
     
     return bookingDetails;

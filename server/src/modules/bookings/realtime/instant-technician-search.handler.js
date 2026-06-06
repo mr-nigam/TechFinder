@@ -45,11 +45,8 @@ asyncHandler(async (ws, data) => {
         event: "technician_search_success",
         data: {
             bookingType: "instant",
-
             searchSessionId,
-
             total: technicians.length,
-
             technicians
         }
     });

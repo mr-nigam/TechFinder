@@ -66,6 +66,13 @@ const InstantBooking = () => {
         phone_type: "alternate",
     });
 
+    // const [currentLocation, setCurrentLocation] = 
+    //     useState(null);
+
+    // const [isFetchingLocation, 
+    //     setIsFetchingLocation] = 
+    //     useState(false);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
 
