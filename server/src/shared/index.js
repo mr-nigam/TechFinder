@@ -69,3 +69,14 @@ export {
     validateRegisterData,
     generateHashedPassword
 } from './utils/auth.validator.js';
+
+
+export {
+    customerFields,
+    technicianFields,
+    bookingBaseFields,
+    bookingAddressFields,
+    bookingCustomerFields,
+    bookingReviewFields,
+    bookingTechnicianFields
+} from './utils/booking.fields.js';

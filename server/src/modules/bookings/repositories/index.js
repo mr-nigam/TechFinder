@@ -28,4 +28,8 @@ export {
     updateTechnicianAvailabilityStatus
 } from './update-technician-availability-status.repo.js';
 
+export {
+    getBookings,
+    getBookingDetails
+} from './bookings-data.repo.js';
 
