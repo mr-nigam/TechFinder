@@ -6,7 +6,6 @@ import createUpdatedAtTrigger from '#shared';
 
 const createUsersTable = async() => {
     try{
-
         await pool.query(`
             CREATE EXTENSION IF NOT EXISTS citext;
         `);
@@ -106,6 +105,7 @@ const createUsersTable = async() => {
         await createUpdatedAtTrigger('users');
         
         console.log("User table and indexes created successfully");
+
     }catch(err){
 
         console.error(" Used Table creation failed", err);

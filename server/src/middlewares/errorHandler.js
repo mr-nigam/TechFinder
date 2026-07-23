@@ -1,40 +1,73 @@
-import { ApiError } from '#shared';
+import ApiError from '../utils/apiError.js';
 
 
 const errorHandler = (err, req, res, next) => {
-    let statusCode = err.statusCode || 500;
-    let message = err.message || "Internal Server Error";
+    let statusCode = 500;
+    let message = "Internal Server Error";
+    let errors = [];
 
-    // Handle known ApiError
+    // Handle custom ApiError
     if (err instanceof ApiError) {
-        return res.status(err.statusCode).json({
-            success: false,
-            statusCode,
-            message: err.message,
-            errors: err.errors,
-            stack: process.env.NODE_ENV === "development" ? err.stack : undefined
+        statusCode = err.statusCode;
+        message = err.message;
+        errors = err.errors || [];
+    }
+
+    // Handle PostgreSQL errors
+    else if(err.code){
+        switch(err.code){
+            // Unique constraint violation
+            case "23505": {
+                statusCode = 409;
+
+                const field = err.detail?.match(/\((.*?)\)/)?.[1];
+
+                message = field
+                    ? `${field} already exists`
+                    : "Resource already exists";
+                break;
+            }
+
+            // Foreign key violation
+            case "23503":
+                statusCode = 409;
+                message = "Referenced resource does not exist";
+                break;
+
+            // NOT NULL violation
+            case "23502":
+                statusCode = 400;
+                message = `${err.column} is required`;
+                break;
+
+             // Invalid UUID / invalid input syntax
+            case "22P02":
+                statusCode = 400;
+                message = "Invalid input";
+                break;
+
+             // Check constraint violation
+            case "23514":
+                statusCode = 400;
+                message = "Constraint validation failed";
+                break;
+
+            default:
+                console.error({
+                    method: req.method,
+                    url: req.originalUrl,
+                    error: err,
+                });
+
+                message = err.message || message;
+        }
+
+    }else{
+        console.error({
+            method: req.method,
+            url: req.originalUrl,
+            error: err,
         });
-    }
-
-    // Mongoose Bad ObjectId
-    if (err.name === "CastError") {
-        statusCode = 400;
-        message = "Invalid resource ID";
-    }
-
-    // Mongoose Validation Error
-    if (err.name === "ValidationError") {
-        statusCode = 400;
-        message = Object.values(err.errors)
-            .map(val => val.message)
-            .join(", ");
-    }
-
-    // Duplicate Key Error (MongoDB)
-    if (err.code === 11000) {
-        statusCode = 400;
-        const field = Object.keys(err.keyValue).join(", ");
-        message = `${field} already exists`;
     }
 
     return res
@@ -43,8 +76,11 @@ const errorHandler = (err, req, res, next) => {
             success: false,
             statusCode,
             message,
-            errors: err.errors || [],
-            stack: process.env.NODE_ENV === "development" ? err.stack : undefined
+            errors,
+            ...(process.env.NODE_ENV === "development" && {
+                stack: err.stack,
+                code: err.code,
+            }),
         });
 };
 

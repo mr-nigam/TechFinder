@@ -68,7 +68,7 @@
     "p-limit": "^7.3.0",
     "pg": "^8.20.0",
     "twilio": "^6.0.0",
-    "ws": "^8.20.0"
+    "ws": "^8.20.0" 
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

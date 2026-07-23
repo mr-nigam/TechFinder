@@ -44,7 +44,7 @@ const register = asyncHandler(async (req, res) => {
     let public_id = "";
 
     try{
-        const normalized = normalizeRegisterData(body);
+        const normalized = normalizeRegisterData(req.body);
 
         validateRegisterData(normalized);
 
@@ -87,7 +87,7 @@ const register = asyncHandler(async (req, res) => {
             .json(
                 new ApiResponse(
                     201,
-                    {user: result.rows[0]},
+                    {user: user.rows[0]},
                     "User registered successfully"
                 )
             );
@@ -98,16 +98,18 @@ const register = asyncHandler(async (req, res) => {
         }catch(_) {}
 
         try{
-            await cleanupQueue.add(
-                "cloudinary:file:delete", 
-                { 
-                    public_id: public_id,
-                    resourceType: "image"
-                },
-                {
-                    jobId: `cloudinary:file:delete:${public_id}`
-                }
-            );
+            if(public_id){
+                await cleanupQueue.add(
+                    "cloudinary:file:delete", 
+                    { 
+                        public_id: public_id,
+                        resourceType: "image"
+                    },
+                    {
+                        jobId: `cloudinary:file:delete:${public_id}`
+                    }
+                );
+            }
         }catch(_) {}
 
         if(err.code === "23505"){
@@ -140,8 +142,12 @@ const register = asyncHandler(async (req, res) => {
         
         throw new ApiError(
             err.statusCode || 500,
-            err.message || "User registeration falied"
+            err.message || "User registration falied"
         );
+
+    }finally{
+
+        await removeLocalFile(localPath).catch(() => {});
     }
 });
 
@@ -151,10 +157,13 @@ const logIn = asyncHandler (async (req, res) => {
     const phone = req.body.phone?.trim()|| "";
     const password = req.body.password?.trim() || "";
 
-    if(!email && !username && !phone){
+    const identifiers =
+        [email, username, phone].filter(Boolean);
+
+    if(identifiers.length !== 1) {
         throw new ApiError(
             400,
-            "Please provide email, username, phone number"
+            "Provide exactly one of email, username or phone."
         );
     }
 
@@ -189,17 +198,18 @@ const logIn = asyncHandler (async (req, res) => {
     if(result.rowCount === 0){
         throw new ApiError(
             404,
-            "User not found"
+            "Invalid email or password."
         );
     }
 
     const hashedPassword = result.rows[0].password;
 
     const isMatch = await bcrypt.compare(password,hashedPassword);
+
     if(!isMatch){
         throw new ApiError(
             401,
-            "Invalid credentials"
+            "Invalid email or password."
         );
     }
     
